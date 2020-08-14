@@ -89,13 +89,17 @@ type Server struct {
 
 func New() *Server {
 	srv := new(Server)
-	srv.Handler = new(mux.Router)
+	srv.Router = new(mux.Router)
+	httpsrv := new(http.Server)
+	httpsrv.Handler = srv.Router
+
 	// TODO: read port from config
-	srv.Addr = ":3000"
+	httpsrv.Addr = ":3000"
 	// Good practice to set timeouts to avoid Slowloris attacks.
-	srv.WriteTimeout = time.Second * 15
-	srv.ReadTimeout = time.Second * 15
-	srv.IdleTimeout = time.Second * 60
+	httpsrv.WriteTimeout = time.Second * 15
+	httpsrv.ReadTimeout = time.Second * 15
+	httpsrv.IdleTimeout = time.Second * 60
+	srv.Server = httpsrv
 	return srv
 }
 

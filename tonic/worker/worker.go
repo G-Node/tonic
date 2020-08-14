@@ -50,7 +50,6 @@ func run(j *Job) {
 }
 
 func (w *Worker) Start() {
-	log.Printf("Worker started")
 	go func() {
 		for {
 			select {
@@ -61,4 +60,5 @@ func (w *Worker) Start() {
 			}
 		}
 	}()
+	log.Print("Worker started")
 }
