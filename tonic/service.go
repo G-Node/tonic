@@ -51,7 +51,6 @@ func NewService() *Tonic {
 
 	// Web server
 	srv.web = web.New()
-	srv.setupWebRoutes()
 
 	// TODO: Set up logger
 	return srv
@@ -62,6 +61,7 @@ func (srv *Tonic) Start() {
 	log.Print("Starting worker")
 	srv.worker.Start()
 	log.Print("Starting web service")
+	srv.setupWebRoutes()
 	srv.web.Start()
 }
 
