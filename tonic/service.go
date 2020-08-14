@@ -1,17 +1,25 @@
 package tonic
 
 import (
-	"log"
-
 	"github.com/G-Node/tonic/tonic/db"
 	"github.com/G-Node/tonic/tonic/web"
 	"github.com/G-Node/tonic/tonic/worker"
+	"log"
+	"net/http"
 )
 
 func checkError(err error) {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+type Config struct {
+	GINServer   string
+	Port        uint16
+	CookieName  string
+	DBPath      string
+	GINPassword string
 }
 
 // Tonic represents a full service which contains a web server, a database for
@@ -21,6 +29,11 @@ type Tonic struct {
 	db     *db.Connection
 	worker *worker.Worker
 	log    *log.Logger // TODO: Move all log messages to this logger
+	form   []Element
+	config *Config
+
+	// Instance specific methods
+	ProcessForm func(w http.ResponseWriter, r *http.Request)
 }
 
 func NewService() *Tonic {
@@ -68,6 +81,7 @@ func (srv *Tonic) Stop() {
 	log.Print("Service stopped")
 }
 
-func (t *Tonic) setupWebRoutes() error {
-	return nil
+func (t *Tonic) SetForm(form []Element) {
+	t.form = make([]Element, len(form))
+	copy(t.form, form)
 }
