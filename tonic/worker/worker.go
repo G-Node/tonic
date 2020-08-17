@@ -8,14 +8,9 @@ import (
 
 // Worker pool with queue for running Jobs asynchronously.
 type Worker struct {
-	queue chan *db.Job
-	stop  chan bool
-}
-
-// Job extends the db.JobInfo struct with an action.
-type Job struct {
-	*db.JobInfo
-	Action func() error
+	queue   chan *db.Job
+	stop    chan bool
+	JobFunc func(v map[string]string) error
 }
 
 func New() *Worker {
@@ -39,7 +34,7 @@ func (w *Worker) Stop() {
 
 func (w *Worker) run(j *db.Job) {
 	log.Printf("Starting job %q", j.Label)
-	err := j.Action()
+	err := w.JobFunc(j.ValueMap)
 	j.EndTime = time.Now()
 	if err == nil {
 		log.Printf("Job [J%d] %s finished", j.ID, j.Label)
@@ -54,7 +49,7 @@ func (w *Worker) Start() {
 		for {
 			select {
 			case job := <-w.queue:
-				run(job)
+				w.run(job)
 			case <-w.stop:
 				return
 			}
