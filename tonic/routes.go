@@ -2,7 +2,6 @@
 package tonic
 
 import (
-	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -69,14 +68,6 @@ func (srv *Tonic) userLoginPost(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		userToken = tokens[0].Sha1
-	}
-
-	client = gogs.NewClient(srv.config.GINServer, userToken)
-	orgs, err := client.ListMyOrgs()
-
-	for idx, org := range orgs {
-		// Bot needs to be owner of org
-		fmt.Printf("%d: %s\n", idx, org.UserName)
 	}
 
 	// TODO: Session cookie with token in DB
