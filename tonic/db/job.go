@@ -16,7 +16,7 @@ type JobInfo struct {
 	// Message returned from finished job
 	Message string
 	// Form values that created the job
-	ValueMap map[string]interface{}
+	ValueMap map[string]string
 	// Time when the job was submitted to the queue
 	SubmitTime time.Time
 	// Time when the job finished (0 if ongoing)

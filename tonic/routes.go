@@ -128,7 +128,7 @@ func (srv *Tonic) showJob(w http.ResponseWriter, r *http.Request) {
 	for _, element := range elements {
 		val, ok := job.ValueMap[element.Name]
 		if ok {
-			element.Value = val.(string)
+			element.Value = val
 		}
 	}
 	data["elements"] = elements
