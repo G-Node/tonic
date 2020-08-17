@@ -90,3 +90,7 @@ func (t *Tonic) SetForm(form []Element) {
 	t.form = make([]Element, len(form))
 	copy(t.form, form)
 }
+
+func (t *Tonic) SetJobFunc(f func(values map[string]string) error) {
+	t.worker.JobFunc = f
+}
