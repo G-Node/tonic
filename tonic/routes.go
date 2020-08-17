@@ -145,10 +145,15 @@ func (srv *Tonic) renderLog(w http.ResponseWriter, r *http.Request) {
 	tmpl, err = tmpl.Parse(templates.LogView)
 	checkError(err)
 
-	// TODO: Get log from database
-	joblog := make([]db.Job, 0)
+	joblog, err := srv.db.AllJobs()
+	if err != nil {
+		srv.web.ErrorResponse(w, http.StatusInternalServerError, "Error reading jobs from DB")
+		return
+	}
 	if err := tmpl.Execute(w, joblog); err != nil {
 		log.Printf("Failed to render log: %v", err)
+		srv.web.ErrorResponse(w, http.StatusInternalServerError, "Error showing job listing")
+		return
 	}
 }
 
@@ -168,4 +173,5 @@ func (srv *Tonic) processForm(w http.ResponseWriter, r *http.Request) {
 	newJob.ValueMap = jobValues
 
 	srv.worker.Enqueue(newJob)
+	srv.db.InsertJob(newJob)
 }
