@@ -32,7 +32,8 @@ func (conn *Connection) InsertJob(job *Job) error {
 
 // UpdateJob updates an existing Job entry in the database.
 func (conn *Connection) UpdateJob(job *Job) error {
-	_, err := conn.engine.Update(job)
+	// Update only job matching the same ID
+	_, err := conn.engine.Update(job, &Job{ID: job.ID})
 	return err
 }
 
