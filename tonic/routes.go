@@ -10,7 +10,6 @@ import (
 
 	"github.com/G-Node/tonic/templates"
 	"github.com/G-Node/tonic/tonic/db"
-	"github.com/G-Node/tonic/tonic/worker"
 	"github.com/gogs/go-gogs-client"
 	"github.com/gorilla/mux"
 )
@@ -147,7 +146,7 @@ func (srv *Tonic) renderLog(w http.ResponseWriter, r *http.Request) {
 	checkError(err)
 
 	// TODO: Get log from database
-	joblog := make([]db.JobInfo, 0)
+	joblog := make([]db.Job, 0)
 	if err := tmpl.Execute(w, joblog); err != nil {
 		log.Printf("Failed to render log: %v", err)
 	}
@@ -165,7 +164,7 @@ func (srv *Tonic) processForm(w http.ResponseWriter, r *http.Request) {
 		jobValues[key] = postValues.Get(key)
 	}
 
-	newJob := new(worker.Job)
+	newJob := new(db.Job)
 	newJob.ValueMap = jobValues
 
 	srv.worker.Enqueue(newJob)

@@ -5,8 +5,8 @@ import (
 	"time"
 )
 
-// JobInfo holds all the information for a given Job.
-type JobInfo struct {
+// Job holds all the information for a given Job.
+type Job struct {
 	// Job ID (auto)
 	ID int64 `xorm:"pk autoincr"`
 	// ID of user who submitted the job
@@ -25,21 +25,21 @@ type JobInfo struct {
 
 // InsertJob inserts a new Job into the database.  Upon successful return, the
 // Job has a new unique ID.
-func (conn *Connection) InsertJob(job *JobInfo) error {
+func (conn *Connection) InsertJob(job *Job) error {
 	_, err := conn.engine.Insert(job) // job ID is assigned on insertion
 	return err
 }
 
 // UpdateJob updates an existing Job entry in the database.
-func (conn *Connection) UpdateJob(job *JobInfo) error {
+func (conn *Connection) UpdateJob(job *Job) error {
 	_, err := conn.engine.Update(job)
 	return err
 }
 
 // GetUserJobs retrieves all the Jobs associated with a given UserID.
-func (conn *Connection) GetUserJobs(uid int64) ([]JobInfo, error) {
-	var userjobs []JobInfo
-	condition := JobInfo{UserID: uid}
+func (conn *Connection) GetUserJobs(uid int64) ([]Job, error) {
+	var userjobs []Job
+	condition := Job{UserID: uid}
 	if err := conn.engine.Find(&userjobs, condition); err != nil {
 		return nil, err
 	}
@@ -48,13 +48,13 @@ func (conn *Connection) GetUserJobs(uid int64) ([]JobInfo, error) {
 }
 
 // IsFinished returns true if the Job has finished (has an EndTime).
-func (ji *JobInfo) IsFinished() bool {
-	return !ji.EndTime.IsZero()
+func (j *Job) IsFinished() bool {
+	return !j.EndTime.IsZero()
 }
 
 // AllJobs returns all Job entries in the database.
-func (conn *Connection) AllJobs() ([]JobInfo, error) {
-	var alljobs []JobInfo
+func (conn *Connection) AllJobs() ([]Job, error) {
+	var alljobs []Job
 	if err := conn.engine.Find(&alljobs); err != nil {
 		return nil, err
 	}
@@ -63,13 +63,13 @@ func (conn *Connection) AllJobs() ([]JobInfo, error) {
 }
 
 // GetJob retrieves a Job from the database given its ID.
-func (conn *Connection) GetJob(id int64) (*JobInfo, error) {
-	ji := new(JobInfo)
-	ji.ID = id
-	if has, err := conn.engine.Get(ji); err != nil {
+func (conn *Connection) GetJob(id int64) (*Job, error) {
+	j := new(Job)
+	j.ID = id
+	if has, err := conn.engine.Get(j); err != nil {
 		return nil, err
 	} else if !has {
 		return nil, fmt.Errorf("not found")
 	}
-	return ji, nil
+	return j, nil
 }

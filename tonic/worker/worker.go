@@ -8,7 +8,7 @@ import (
 
 // Worker pool with queue for running Jobs asynchronously.
 type Worker struct {
-	queue chan *Job
+	queue chan *db.Job
 	stop  chan bool
 }
 
@@ -21,13 +21,13 @@ type Job struct {
 func New() *Worker {
 	w := new(Worker)
 	// TODO: Define worker queue length in configuration
-	w.queue = make(chan *Job, 100)
+	w.queue = make(chan *db.Job, 100)
 	w.stop = make(chan bool)
 	return w
 }
 
 // Enqueue adds the job to the queue and stores it in the database.
-func (w *Worker) Enqueue(j *Job) {
+func (w *Worker) Enqueue(j *db.Job) {
 	w.queue <- j
 	j.SubmitTime = time.Now()
 }
@@ -37,7 +37,7 @@ func (w *Worker) Stop() {
 	w.stop <- true
 }
 
-func run(j *Job) {
+func (w *Worker) run(j *db.Job) {
 	log.Printf("Starting job %q", j.Label)
 	err := j.Action()
 	j.EndTime = time.Now()
