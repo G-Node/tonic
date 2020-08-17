@@ -49,7 +49,7 @@ func (conn *Connection) GetUserJobs(uid int64) ([]JobInfo, error) {
 
 // IsFinished returns true if the Job has finished (has an EndTime).
 func (ji *JobInfo) IsFinished() bool {
-	return ji.EndTime.IsZero()
+	return !ji.EndTime.IsZero()
 }
 
 // AllJobs returns all Job entries in the database.
