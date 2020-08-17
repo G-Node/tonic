@@ -10,6 +10,7 @@ import (
 
 	"github.com/G-Node/tonic/templates"
 	"github.com/G-Node/tonic/tonic/db"
+	"github.com/G-Node/tonic/tonic/worker"
 	"github.com/gogs/go-gogs-client"
 	"github.com/gorilla/mux"
 )
@@ -25,7 +26,7 @@ func (srv *Tonic) setupWebRoutes() error {
 	router.HandleFunc("/login", srv.userLoginPost).Methods("POST")
 
 	router.HandleFunc("/", srv.renderForm).Methods("GET")
-	router.HandleFunc("/", srv.ProcessForm).Methods("POST")
+	router.HandleFunc("/", srv.processForm).Methods("POST")
 	router.HandleFunc("/log", srv.renderLog).Methods("GET")
 	router.HandleFunc("/log/{id:[0-9]+}", srv.showJob).Methods("GET")
 
@@ -150,4 +151,22 @@ func (srv *Tonic) renderLog(w http.ResponseWriter, r *http.Request) {
 	if err := tmpl.Execute(w, joblog); err != nil {
 		log.Printf("Failed to render log: %v", err)
 	}
+}
+
+func (srv *Tonic) processForm(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		log.Printf("Failed to parse form: %v", err)
+	}
+	postValues := r.PostForm
+	jobValues := make(map[string]string)
+	for idx := range srv.form {
+		key := srv.form[idx].Name
+		jobValues[key] = postValues.Get(key)
+	}
+
+	newJob := new(worker.Job)
+	newJob.ValueMap = jobValues
+
+	srv.worker.Enqueue(newJob)
 }

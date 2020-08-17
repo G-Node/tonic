@@ -2,7 +2,6 @@ package tonic
 
 import (
 	"log"
-	"net/http"
 	"os"
 	"os/signal"
 
@@ -34,9 +33,6 @@ type Tonic struct {
 	log    *log.Logger // TODO: Move all log messages to this logger
 	form   []Element
 	config *Config
-
-	// Instance specific methods
-	ProcessForm func(w http.ResponseWriter, r *http.Request)
 }
 
 func NewService() *Tonic {
