@@ -1,11 +1,14 @@
 package tonic
 
 import (
+	"log"
+	"net/http"
+	"os"
+	"os/signal"
+
 	"github.com/G-Node/tonic/tonic/db"
 	"github.com/G-Node/tonic/tonic/web"
 	"github.com/G-Node/tonic/tonic/worker"
-	"log"
-	"net/http"
 )
 
 func checkError(err error) {
@@ -63,6 +66,12 @@ func (srv *Tonic) Start() {
 	log.Print("Starting web service")
 	srv.setupWebRoutes()
 	srv.web.Start()
+}
+
+func (srv *Tonic) WaitForInterrupt() {
+	sigchan := make(chan os.Signal, 1)
+	signal.Notify(sigchan, os.Interrupt)
+	<-sigchan
 }
 
 // Stop the service by gracefully shutting down the web service, stopping the
