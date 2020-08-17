@@ -35,7 +35,7 @@ type Tonic struct {
 	config *Config
 }
 
-func NewService() *Tonic {
+func NewService(form []Element, f func(values map[string]string) error) *Tonic {
 	srv := new(Tonic)
 	// DB
 	// TODO: Define db path in config
@@ -52,12 +52,22 @@ func NewService() *Tonic {
 	srv.web = web.New()
 	srv.setupWebRoutes()
 
+	// set form and func
+	srv.SetForm(form)
+	srv.SetJobFunc(f)
+
 	// TODO: Set up logger
 	return srv
 }
 
 // Start the service (worker and web server).
 func (srv *Tonic) Start() {
+	if srv.form == nil || len(srv.form) == 0 {
+		log.Fatal("nil or empty form is invalid")
+	}
+	if srv.worker.JobFunc == nil {
+		log.Fatal("nil job function is invalid")
+	}
 	log.Print("Starting worker")
 	srv.worker.Start()
 	log.Print("Starting web service")
