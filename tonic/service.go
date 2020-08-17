@@ -32,7 +32,7 @@ type Tonic struct {
 	worker *worker.Worker
 	log    *log.Logger // TODO: Move all log messages to this logger
 	form   []Element
-	config *Config
+	Config *Config
 }
 
 func NewService(form []Element, f func(values map[string]string) error) *Tonic {

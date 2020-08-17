@@ -51,7 +51,7 @@ func (srv *Tonic) userLoginPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client := gogs.NewClient(srv.config.GINServer, "")
+	client := gogs.NewClient(srv.Config.GINServer, "")
 	var userToken string
 	tokens, err := client.ListAccessTokens(username, password)
 	if err != nil {
@@ -72,7 +72,7 @@ func (srv *Tonic) userLoginPost(w http.ResponseWriter, r *http.Request) {
 
 	// TODO: Session cookie with token in DB
 	cookie := http.Cookie{
-		Name:    srv.config.CookieName,
+		Name:    srv.Config.CookieName,
 		Value:   userToken, // create session IDs linked to token instead
 		Expires: time.Now().Add(7 * 24 * time.Hour),
 		Secure:  false,
