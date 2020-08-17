@@ -107,6 +107,7 @@ func (srv *Tonic) showJob(w http.ResponseWriter, r *http.Request) {
 	jobid, err := strconv.ParseInt(vars["id"], 10, 64)
 	if err != nil {
 		srv.web.ErrorResponse(w, http.StatusInternalServerError, "Invalid ID")
+		return
 	}
 	job, err := srv.db.GetJob(jobid)
 
