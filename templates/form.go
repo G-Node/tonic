@@ -27,22 +27,30 @@ const Form = `
 										<button class="ui green button">Submit</button>
 									</div>
 								{{end}}
-								{{if .submit_time}}
-									<div>
-										Submitted {{.submit_time}}
-									</div>
-									<div>
+							</div>
+
+							{{if .read_only}}
+								<h3 class="ui attached header">Status</h3>
+								<div class="ui attached segment">
+									<ul class="list">
+										<li><b>Submitted</b> {{.submit_time}}</li>
 										{{if .end_time}}
-											Finished {{.end_time}}
-										{{else}}
-											In queue
+											<li><b>Finished</b> {{.end_time}}</li>
 										{{end}}
-									</div>
-								{{end}}
-								{{if .message}}
-									<div>
-										{{.message}}
-									</div>
+									</ul>
+									{{if not .end_time}}
+										<div class="ui message">
+											Job is in queue
+										</div>
+									{{else if .message}}
+										<div class="ui negative message">
+											<b>Job failed with error:</b> {{.message}}
+										</div>
+									{{else}}
+										<div class="ui positive message">
+											Job completed <b>successfully</b>
+										</div>
+									{{end}}
 								{{end}}
 							</div>
 						</form>

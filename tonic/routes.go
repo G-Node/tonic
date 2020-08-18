@@ -134,8 +134,11 @@ func (srv *Tonic) showJob(w http.ResponseWriter, r *http.Request) {
 
 	// Add timestamps and exit message to template data and set read-only
 	data["elements"] = elements
-	data["submit_time"] = job.SubmitTime
-	data["end_time"] = job.EndTime
+	timefmt := "15:04:05 Mon Jan 2 2006"
+	data["submit_time"] = job.SubmitTime.Format(timefmt)
+	if job.IsFinished() {
+		data["end_time"] = job.EndTime.Format(timefmt)
+	}
 	data["message"] = job.Message
 	data["readonly"] = true
 
