@@ -178,4 +178,7 @@ func (srv *Tonic) processForm(w http.ResponseWriter, r *http.Request) {
 	newJob.ValueMap = jobValues
 
 	srv.worker.Enqueue(newJob)
+
+	// redirect to job log
+	http.Redirect(w, r, "/log", http.StatusSeeOther)
 }
