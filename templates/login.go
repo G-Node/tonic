@@ -1,6 +1,8 @@
 package templates
 
 // TODO: add csrf thingie
+
+// Login page template
 const Login = `
 {{ define "content" }}
 			<div class="user signin">
@@ -31,6 +33,3 @@ const Login = `
 			</div>
 {{ end }}
 `
-
-
-// vim: ft=gohtmltmpl
