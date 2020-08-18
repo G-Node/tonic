@@ -73,8 +73,8 @@ func (srv *Tonic) userLoginPost(w http.ResponseWriter, r *http.Request) {
 	// TODO: Session cookie with token in DB
 	cookie := http.Cookie{
 		Name:    srv.Config.CookieName,
-		Value:   userToken, // create session IDs linked to token instead
-		Expires: time.Now().Add(7 * 24 * time.Hour),
+		Value:   userToken,                          // TODO: create session IDs linked to token instead
+		Expires: time.Now().Add(7 * 24 * time.Hour), // TODO: Configurable expiration
 		Secure:  false,
 	}
 
@@ -122,16 +122,21 @@ func (srv *Tonic) showJob(w http.ResponseWriter, r *http.Request) {
 	tmpl, err = tmpl.Parse(templates.Form)
 	checkError(err)
 
+	// Set up form and assign values to each matching element
 	data := make(map[string]interface{})
 	elements := make([]Element, len(srv.form))
 	copy(elements, srv.form)
-	for _, element := range elements {
-		val, ok := job.ValueMap[element.Name]
-		if ok {
-			element.Value = val
+	for idx := range elements {
+		if val, ok := job.ValueMap[elements[idx].Name]; ok {
+			elements[idx].Value = val
 		}
 	}
+
+	// Add timestamps and exit message to template data and set read-only
 	data["elements"] = elements
+	data["submit_time"] = job.SubmitTime
+	data["end_time"] = job.EndTime
+	data["message"] = job.Message
 	data["readonly"] = true
 
 	if err := tmpl.Execute(w, data); err != nil {

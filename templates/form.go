@@ -27,6 +27,23 @@ const Form = `
 										<button class="ui green button">Submit</button>
 									</div>
 								{{end}}
+								{{if .submit_time}}
+									<div>
+										Submitted {{.submit_time}}
+									</div>
+									<div>
+										{{if .end_time}}
+											Finished {{.end_time}}
+										{{else}}
+											In queue
+										{{end}}
+									</div>
+								{{end}}
+								{{if .message}}
+									<div>
+										{{.message}}
+									</div>
+								{{end}}
 							</div>
 						</form>
 					</div>
