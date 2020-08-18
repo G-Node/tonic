@@ -46,7 +46,7 @@ func NewService(form []Element, f func(values map[string]string) error) *Tonic {
 
 	// Worker
 	log.Print("Starting worker")
-	srv.worker = worker.New()
+	srv.worker = worker.New(srv.db)
 
 	// Web server
 	srv.web = web.New()

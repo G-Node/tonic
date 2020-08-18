@@ -1,9 +1,10 @@
 package worker
 
 import (
-	"github.com/G-Node/tonic/tonic/db"
 	"log"
 	"time"
+
+	"github.com/G-Node/tonic/tonic/db"
 )
 
 // Worker pool with queue for running Jobs asynchronously.
@@ -11,20 +12,31 @@ type Worker struct {
 	queue   chan *db.Job
 	stop    chan bool
 	JobFunc func(v map[string]string) error
+	db      *db.Connection
 }
 
-func New() *Worker {
+func New(dbconn *db.Connection) *Worker {
 	w := new(Worker)
 	// TODO: Define worker queue length in configuration
 	w.queue = make(chan *db.Job, 100)
 	w.stop = make(chan bool)
+	w.db = dbconn
 	return w
 }
 
 // Enqueue adds the job to the queue and stores it in the database.
 func (w *Worker) Enqueue(j *db.Job) {
-	w.queue <- j
 	j.SubmitTime = time.Now()
+	var label string
+	for _, label = range j.ValueMap {
+		break
+	}
+	j.Label = label
+	err := w.db.InsertJob(j)
+	if err != nil {
+		log.Printf("Error inserting job %+v into db: %v", j, err)
+	}
+	w.queue <- j
 }
 
 func (w *Worker) Stop() {
@@ -33,6 +45,7 @@ func (w *Worker) Stop() {
 }
 
 func (w *Worker) run(j *db.Job) {
+	defer w.db.UpdateJob(j) // Update job entry in db when done
 	log.Printf("Starting job %q", j.Label)
 	err := w.JobFunc(j.ValueMap)
 	j.EndTime = time.Now()

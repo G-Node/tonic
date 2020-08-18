@@ -178,5 +178,4 @@ func (srv *Tonic) processForm(w http.ResponseWriter, r *http.Request) {
 	newJob.ValueMap = jobValues
 
 	srv.worker.Enqueue(newJob)
-	srv.db.InsertJob(newJob)
 }
