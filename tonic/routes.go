@@ -14,6 +14,29 @@ import (
 	"github.com/gorilla/mux"
 )
 
+// authedHandler is a handler that requires an authenticated user
+type authedHandler func(w http.ResponseWriter, r *http.Request, token string)
+
+// reqLoginHandler acts as middleware to check if the user is logged in.
+// Returns a function that matches 'authedHandler()'.
+// Use for pages that require authentication (currently, everything except the login page).
+func (srv *Tonic) reqLoginHandler(handler authedHandler) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		cookie, err := r.Cookie(srv.Config.CookieName)
+		if err != nil || cookie.Value == "" {
+			http.Redirect(w, r, "/login", http.StatusFound)
+			return
+		}
+
+		// TODO: get token from db session store
+		token := cookie.Value
+
+		// TODO: Check that the session is still valid (by checking expiration)
+		// TODO: check that the token is still valid (by contacting GIN)
+		handler(w, r, token)
+	}
+}
+
 // setupWebRoutes sets up the common routes shared by all instances of the service.
 //
 // Login, Form (editable and read-only), and Job log pages
@@ -24,10 +47,10 @@ func (srv *Tonic) setupWebRoutes() error {
 	router.HandleFunc("/login", srv.renderLoginPage).Methods("GET")
 	router.HandleFunc("/login", srv.userLoginPost).Methods("POST")
 
-	router.HandleFunc("/", srv.renderForm).Methods("GET")
-	router.HandleFunc("/", srv.processForm).Methods("POST")
-	router.HandleFunc("/log", srv.renderLog).Methods("GET")
-	router.HandleFunc("/log/{id:[0-9]+}", srv.showJob).Methods("GET")
+	router.HandleFunc("/", srv.reqLoginHandler(srv.renderForm)).Methods("GET")
+	router.HandleFunc("/", srv.reqLoginHandler(srv.processForm)).Methods("POST")
+	router.HandleFunc("/log", srv.reqLoginHandler(srv.renderLog)).Methods("GET")
+	router.HandleFunc("/log/{id:[0-9]+}", srv.reqLoginHandler(srv.showJob)).Methods("GET")
 
 	router.PathPrefix("/assets/").Handler(http.StripPrefix("/assets/", http.FileServer(http.Dir("./assets"))))
 	return nil
@@ -83,7 +106,7 @@ func (srv *Tonic) userLoginPost(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
-func (srv *Tonic) renderForm(w http.ResponseWriter, r *http.Request) {
+func (srv *Tonic) renderForm(w http.ResponseWriter, r *http.Request, token string) {
 	tmpl := template.New("layout")
 	tmpl, err := tmpl.Parse(templates.Layout)
 	checkError(err)
@@ -102,7 +125,7 @@ func (srv *Tonic) renderForm(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (srv *Tonic) showJob(w http.ResponseWriter, r *http.Request) {
+func (srv *Tonic) showJob(w http.ResponseWriter, r *http.Request, token string) {
 	vars := mux.Vars(r)
 	jobid, err := strconv.ParseInt(vars["id"], 10, 64)
 	if err != nil {
@@ -146,7 +169,7 @@ func (srv *Tonic) showJob(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Failed to render form: %v", err)
 	}
 }
-func (srv *Tonic) renderLog(w http.ResponseWriter, r *http.Request) {
+func (srv *Tonic) renderLog(w http.ResponseWriter, r *http.Request, token string) {
 	tmpl := template.New("layout")
 	tmpl, err := tmpl.Parse(templates.Layout)
 	checkError(err)
@@ -165,7 +188,7 @@ func (srv *Tonic) renderLog(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (srv *Tonic) processForm(w http.ResponseWriter, r *http.Request) {
+func (srv *Tonic) processForm(w http.ResponseWriter, r *http.Request, token string) {
 	err := r.ParseForm()
 	if err != nil {
 		log.Printf("Failed to parse form: %v", err)
