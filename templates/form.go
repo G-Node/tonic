@@ -81,9 +81,10 @@ const LogView = `
 					{{range $job := .}}
 						<tr>
 							<td class="name two wide">J{{$job.ID}}</td>
-							<td class="name text bold nine wide"><a href="/log/{{$job.ID}}">{{$job.Label}}</a></td>
+							<td class="name text bold four wide"><a href="/log/{{$job.ID}}">Job {{$job.ID}}</a></td>
 							<td class="name four wide">{{$job.SubmitTime}}</td>
 							<td class="name four wide">{{$job.EndTime}}</td>
+							<td class="name four wide">{{$job.Message}}</td>
 						</tr>
 					{{end}}
 				</tbody>
