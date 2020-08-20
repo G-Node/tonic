@@ -97,5 +97,4 @@ func (w *Worker) Start() {
 			}
 		}
 	}()
-	log.Print("Worker started")
 }

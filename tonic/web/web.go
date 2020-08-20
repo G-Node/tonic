@@ -109,7 +109,6 @@ func (ws *Server) Start() {
 			log.Println(err)
 		}
 	}()
-	log.Print("Web server started")
 }
 
 func (ws *Server) Stop() {

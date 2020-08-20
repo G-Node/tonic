@@ -66,7 +66,6 @@ func NewService(form []Element, f worker.JobAction) *Tonic {
 // login to configured GIN server as the bot user that represents this service
 // and attach a new authenticated gogs.Client to the service struct.
 func (srv *Tonic) login() {
-	log.Print("Logging in to gin")
 	passfile, err := os.Open("testbot") // TODO: Add to config
 
 	passdata, err := ioutil.ReadAll(passfile)
@@ -100,12 +99,18 @@ func (srv *Tonic) Start() {
 	if srv.worker.Action == nil {
 		log.Fatal("nil job function is invalid")
 	}
+
 	log.Print("Starting worker")
 	srv.worker.Start()
+	log.Print("Worker started")
+
 	log.Print("Starting web service")
 	srv.web.Start()
+	log.Print("Web server started")
 
+	log.Print("Logging in to gin")
 	srv.login()
+	log.Printf("Logged in and ready")
 }
 
 func (srv *Tonic) WaitForInterrupt() {
