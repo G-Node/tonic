@@ -5,36 +5,58 @@ import (
 	"time"
 
 	"github.com/G-Node/tonic/tonic/db"
+	"github.com/gogs/go-gogs-client"
 )
 
-type JobAction func(v map[string]string) ([]string, error)
+type JobAction func(v map[string]string, botClient, userClient *gogs.Client) ([]string, error)
+
+// UserJob extends db.Job with a user token to perform authenticated tasks on
+// behalf of a given user.
+type UserJob struct {
+	*db.Job
+	client *gogs.Client
+}
+
+func NewUserJob(client *gogs.Client, values map[string]string) *UserJob {
+	j := new(UserJob)
+	j.client = client
+	// copy values to avoid mutating ValueMap after it's assigned.
+	for k, v := range values {
+		j.ValueMap[k] = v
+	}
+	return j
+}
 
 // Worker pool with queue for running Jobs asynchronously.
 type Worker struct {
-	queue  chan *db.Job
+	queue  chan *UserJob
 	stop   chan bool
 	Action JobAction
 	db     *db.Connection
+	// botClient is used to perform administrative actions as the bot user that
+	// represents the srevice.
+	botClient *gogs.Client
 }
 
 func New(dbconn *db.Connection) *Worker {
 	w := new(Worker)
 	// TODO: Define worker queue length in configuration
-	w.queue = make(chan *db.Job, 100)
+	w.queue = make(chan *UserJob, 100)
 	w.stop = make(chan bool)
 	w.db = dbconn
 	return w
 }
 
 // Enqueue adds the job to the queue and stores it in the database.
-func (w *Worker) Enqueue(j *db.Job) {
+func (w *Worker) Enqueue(j *UserJob) {
 	j.SubmitTime = time.Now()
+	// TODO: Find a good way to label jobs otherwise just use IDs in listings
 	var label string
 	for _, label = range j.ValueMap {
 		break
 	}
 	j.Label = label
-	err := w.db.InsertJob(j)
+	err := w.db.InsertJob(j.Job)
 	if err != nil {
 		log.Printf("Error inserting job %+v into db: %v", j, err)
 	}
@@ -46,10 +68,10 @@ func (w *Worker) Stop() {
 	w.stop <- true
 }
 
-func (w *Worker) run(j *db.Job) {
-	defer w.db.UpdateJob(j) // Update job entry in db when done
+func (w *Worker) run(j *UserJob) {
+	defer w.db.UpdateJob(j.Job) // Update job entry in db when done
 	log.Printf("Starting job %q", j.Label)
-	msgs, err := w.Action(j.ValueMap)
+	msgs, err := w.Action(j.ValueMap, j.client, w.botClient)
 	j.EndTime = time.Now()
 	j.Messages = msgs
 	if err == nil {

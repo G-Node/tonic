@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/G-Node/tonic/templates"
-	"github.com/G-Node/tonic/tonic/db"
+	"github.com/G-Node/tonic/tonic/worker"
 	"github.com/gogs/go-gogs-client"
 	"github.com/gorilla/mux"
 )
@@ -202,10 +202,8 @@ func (srv *Tonic) processForm(w http.ResponseWriter, r *http.Request, token stri
 		jobValues[key] = postValues.Get(key)
 	}
 
-	newJob := new(db.Job)
-	newJob.ValueMap = jobValues
-
-	srv.worker.Enqueue(newJob)
+	client := gogs.NewClient(srv.Config.GINServer, token)
+	srv.worker.Enqueue(worker.NewUserJob(client, jobValues))
 
 	// redirect to job log
 	http.Redirect(w, r, "/log", http.StatusSeeOther)
