@@ -49,13 +49,14 @@ func (w *Worker) Stop() {
 func (w *Worker) run(j *db.Job) {
 	defer w.db.UpdateJob(j) // Update job entry in db when done
 	log.Printf("Starting job %q", j.Label)
-	err := w.JobFunc(j.ValueMap)
+	msgs, err := w.Action(j.ValueMap)
 	j.EndTime = time.Now()
+	j.Messages = msgs
 	if err == nil {
 		log.Printf("Job [J%d] %s finished", j.ID, j.Label)
 	} else {
 		log.Printf("Job [J%d]  %s failed: %s", j.ID, j.Label, err)
-		j.Message = err.Error()
+		j.Error = err
 	}
 }
 

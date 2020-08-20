@@ -13,8 +13,11 @@ type Job struct {
 	UserID int64
 	// Name/label of the job
 	Label string
-	// Message returned from finished job
-	Message string
+	// Messages returned from finished job. This will be visible to the user
+	// once the job is finished.
+	Messages []string
+	// Error message (if the job failed).
+	Error error
 	// Form values that created the job
 	ValueMap map[string]string
 	// Time when the job was submitted to the queue

@@ -32,7 +32,6 @@ func (srv *Tonic) reqLoginHandler(handler authedHandler) func(w http.ResponseWri
 		token := cookie.Value
 
 		// TODO: Check that the session is still valid (by checking expiration)
-		// TODO: check that the token is still valid (by contacting GIN)
 		handler(w, r, token)
 	}
 }
@@ -162,7 +161,7 @@ func (srv *Tonic) showJob(w http.ResponseWriter, r *http.Request, token string) 
 	if job.IsFinished() {
 		data["end_time"] = job.EndTime.Format(timefmt)
 	}
-	data["message"] = job.Message
+	data["message"] = job.Messages
 	data["readonly"] = true
 
 	if err := tmpl.Execute(w, data); err != nil {
