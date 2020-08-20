@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+
 	"github.com/G-Node/tonic/tonic"
 	"github.com/gogs/go-gogs-client"
 )
@@ -32,28 +33,26 @@ func main() {
 		},
 	}
 	tsrv := tonic.NewService(form, newProject)
+	tsrv.Config = &tonic.Config{GINServer: "https://gin.dev.g-node.org", CookieName: "utonic-labproject"}
 	tsrv.Start()
 	tsrv.WaitForInterrupt()
 	tsrv.Stop()
 
 }
 
-func newProject(values map[string]string) ([]string, error) {
+func newProject(values map[string]string, botClient, userClient *gogs.Client) ([]string, error) {
 	organisation := values["organisation"]
 	project := values["project"]
 	description := values["description"]
 
 	msgs := make([]string, 0, 10)
 
-	userClient := gogs.NewClient("https://gin.dev.g-node.org", "token")
-	botClient := gogs.NewClient("https://gin.dev.g-node.org", "token")
-
 	// verify that the user is a member of the organisation
 	orgOK := false
 	validOrgs, err := getAvailableOrgs(botClient, userClient)
 	if err != nil {
 		msgs = append(msgs, "Failed to get list of valid orgs")
-		return nil, err
+		return msgs, err
 	}
 	for _, validOrg := range validOrgs {
 		if validOrg.UserName == organisation {
@@ -64,7 +63,7 @@ func newProject(values map[string]string) ([]string, error) {
 
 	if !orgOK {
 		msgs = append(msgs, fmt.Sprintf("Lab organisation %q is not a valid option. Either user is not a member, or the service is not enabled for that organisation.", organisation))
-		return nil, fmt.Errorf("Invalid organisation %q: Cannot create new project", organisation)
+		return msgs, fmt.Errorf("Invalid organisation %q: Cannot create new project", organisation)
 	}
 
 	projectOpt := gogs.CreateRepoOption{
@@ -78,7 +77,7 @@ func newProject(values map[string]string) ([]string, error) {
 	repo, err := botClient.CreateOrgRepo(organisation, projectOpt)
 	if err != nil {
 		msgs = append(msgs, fmt.Sprintf("Failed to create repository: %v", err.Error()))
-		return nil, err
+		return msgs, err
 	}
 
 	msgs = append(msgs, fmt.Sprintf("Repository created: %s", repo.FullName))

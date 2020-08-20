@@ -35,7 +35,6 @@ type Tonic struct {
 	worker *worker.Worker
 	log    *log.Logger // TODO: Move all log messages to this logger
 	form   []Element
-	client *gogs.Client
 	Config *Config
 }
 
@@ -89,7 +88,7 @@ func (srv *Tonic) login() {
 		token, err = client.CreateAccessToken(userpass["username"], userpass["password"], gogs.CreateAccessTokenOption{Name: "testbot"})
 		checkError(err)
 	}
-	srv.client = gogs.NewClient(srv.Config.GINServer, token.Sha1)
+	srv.worker.SetClient(gogs.NewClient(srv.Config.GINServer, token.Sha1))
 	log.Printf("Logged in and ready")
 }
 

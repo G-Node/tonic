@@ -21,6 +21,7 @@ func NewUserJob(client *gogs.Client, values map[string]string) *UserJob {
 	j := new(UserJob)
 	j.client = client
 	// copy values to avoid mutating ValueMap after it's assigned.
+	j.ValueMap = make(map[string]string, len(values))
 	for k, v := range values {
 		j.ValueMap[k] = v
 	}
@@ -33,9 +34,9 @@ type Worker struct {
 	stop   chan bool
 	Action JobAction
 	db     *db.Connection
-	// botClient is used to perform administrative actions as the bot user that
+	// client is used to perform administrative actions as the bot user that
 	// represents the srevice.
-	botClient *gogs.Client
+	client *gogs.Client
 }
 
 func New(dbconn *db.Connection) *Worker {
@@ -45,6 +46,10 @@ func New(dbconn *db.Connection) *Worker {
 	w.stop = make(chan bool)
 	w.db = dbconn
 	return w
+}
+
+func (w *Worker) SetClient(c *gogs.Client) {
+	w.client = c
 }
 
 // Enqueue adds the job to the queue and stores it in the database.
@@ -70,8 +75,7 @@ func (w *Worker) Stop() {
 
 func (w *Worker) run(j *UserJob) {
 	defer w.db.UpdateJob(j.Job) // Update job entry in db when done
-	log.Printf("Starting job %q", j.Label)
-	msgs, err := w.Action(j.ValueMap, j.client, w.botClient)
+	msgs, err := w.Action(j.ValueMap, w.client, j.client)
 	j.EndTime = time.Now()
 	j.Messages = msgs
 	if err == nil {
