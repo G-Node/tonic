@@ -7,12 +7,14 @@ import (
 	"github.com/G-Node/tonic/tonic/db"
 )
 
+type JobAction func(v map[string]string) ([]string, error)
+
 // Worker pool with queue for running Jobs asynchronously.
 type Worker struct {
-	queue   chan *db.Job
-	stop    chan bool
-	JobFunc func(v map[string]string) error
-	db      *db.Connection
+	queue  chan *db.Job
+	stop   chan bool
+	Action JobAction
+	db     *db.Connection
 }
 
 func New(dbconn *db.Connection) *Worker {

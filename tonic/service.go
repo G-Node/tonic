@@ -35,7 +35,7 @@ type Tonic struct {
 	Config *Config
 }
 
-func NewService(form []Element, f func(values map[string]string) error) *Tonic {
+func NewService(form []Element, f worker.JobAction) *Tonic {
 	srv := new(Tonic)
 	// DB
 	// TODO: Define db path in config
@@ -54,7 +54,7 @@ func NewService(form []Element, f func(values map[string]string) error) *Tonic {
 
 	// set form and func
 	srv.SetForm(form)
-	srv.SetJobFunc(f)
+	srv.SetJobAction(f)
 
 	// TODO: Set up logger
 	return srv
@@ -65,7 +65,7 @@ func (srv *Tonic) Start() {
 	if srv.form == nil || len(srv.form) == 0 {
 		log.Fatal("nil or empty form is invalid")
 	}
-	if srv.worker.JobFunc == nil {
+	if srv.worker.Action == nil {
 		log.Fatal("nil job function is invalid")
 	}
 	log.Print("Starting worker")
@@ -101,6 +101,6 @@ func (t *Tonic) SetForm(form []Element) {
 	copy(t.form, form)
 }
 
-func (t *Tonic) SetJobFunc(f func(values map[string]string) error) {
-	t.worker.JobFunc = f
+func (t *Tonic) SetJobAction(f worker.JobAction) {
+	t.worker.Action = f
 }
