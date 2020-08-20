@@ -161,7 +161,10 @@ func (srv *Tonic) showJob(w http.ResponseWriter, r *http.Request, token string) 
 	if job.IsFinished() {
 		data["end_time"] = job.EndTime.Format(timefmt)
 	}
-	data["message"] = job.Messages
+	data["messages"] = job.Messages
+	if job.Error != nil {
+		data["error"] = job.Error.Error()
+	}
 	data["readonly"] = true
 
 	if err := tmpl.Execute(w, data); err != nil {

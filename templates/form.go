@@ -29,28 +29,34 @@ const Form = `
 								{{end}}
 							</div>
 
-							{{if .read_only}}
+							{{if .readonly}}
 								<h3 class="ui attached header">Status</h3>
 								<div class="ui attached segment">
-									<ul class="list">
-										<li><b>Submitted</b> {{.submit_time}}</li>
-										{{if .end_time}}
-											<li><b>Finished</b> {{.end_time}}</li>
-										{{end}}
-									</ul>
 									{{if not .end_time}}
 										<div class="ui message">
 											Job is in queue
 										</div>
-									{{else if .message}}
+									{{else if .error}}
 										<div class="ui negative message">
-											<b>Job failed with error:</b> {{.message}}
+											<b>Job failed with error:</b> {{.error}}
 										</div>
 									{{else}}
 										<div class="ui positive message">
 											Job completed <b>successfully</b>
 										</div>
 									{{end}}
+									<ul class="list">
+										<li><b>Submitted</b> {{.submit_time}}</li>
+										{{if .end_time}}
+											<li><b>Finished</b> {{.end_time}}</li>
+										{{end}}
+									</ul>
+								<h3 class="ui attached header">Job log</h3>
+									<ol class="list" start="0">
+									{{range $msg := .messages}}
+										<li>{{$msg}}</li>
+									{{end}}
+									</ol>
 								{{end}}
 							</div>
 						</form>
