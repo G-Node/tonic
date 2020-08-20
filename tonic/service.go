@@ -88,7 +88,6 @@ func (srv *Tonic) login() {
 		checkError(err)
 	}
 	srv.worker.SetClient(gogs.NewClient(srv.Config.GINServer, token.Sha1))
-	log.Printf("Logged in and ready")
 }
 
 // Start the service (worker and web server).

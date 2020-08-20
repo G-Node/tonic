@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/G-Node/tonic/templates"
+	"github.com/G-Node/tonic/tonic/db"
 	"github.com/G-Node/tonic/tonic/worker"
 	"github.com/gogs/go-gogs-client"
 	"github.com/gorilla/mux"
@@ -28,11 +29,15 @@ func (srv *Tonic) reqLoginHandler(handler authedHandler) func(w http.ResponseWri
 			return
 		}
 
-		// TODO: get token from db session store
-		token := cookie.Value
+		sessid := cookie.Value
+		session, err := srv.db.GetSession(sessid)
+		if err != nil {
+			http.Redirect(w, r, "/login", http.StatusFound)
+			return
+		}
 
 		// TODO: Check that the session is still valid (by checking expiration)
-		handler(w, r, token)
+		handler(w, r, session.Token)
 	}
 }
 
@@ -92,12 +97,18 @@ func (srv *Tonic) userLoginPost(w http.ResponseWriter, r *http.Request) {
 		userToken = tokens[0].Sha1
 	}
 
-	// TODO: Session cookie with token in DB
+	sess := db.NewSession(username, userToken)
+
 	cookie := http.Cookie{
 		Name:    srv.Config.CookieName,
-		Value:   userToken,                          // TODO: create session IDs linked to token instead
+		Value:   sess.ID,
 		Expires: time.Now().Add(7 * 24 * time.Hour), // TODO: Configurable expiration
 		Secure:  false,
+	}
+
+	if err := srv.db.InsertSession(sess); err != nil {
+		srv.web.ErrorResponse(w, http.StatusInternalServerError, "DB write failure. Please contact an administrator.")
+		return
 	}
 
 	http.SetCookie(w, &cookie)
