@@ -33,7 +33,7 @@ const LogView = `
 							<td class="name text bold four wide"><a href="/log/{{$job.ID}}">Job {{$job.ID}}</a></td>
 							<td class="name four wide">{{$job.SubmitTime}}</td>
 							<td class="name four wide">{{$job.EndTime}}</td>
-							<td class="name four wide">{{$job.Message}}</td>
+							<td class="name four wide">{{if $job.Error}}{{$job.Error}}{{end}}</td>
 						</tr>
 					{{end}}
 				</tbody>

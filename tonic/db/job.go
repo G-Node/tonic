@@ -2,6 +2,7 @@ package db
 
 import (
 	"fmt"
+	"log"
 	"time"
 )
 
@@ -17,7 +18,7 @@ type Job struct {
 	// once the job is finished.
 	Messages []string
 	// Error message (if the job failed).
-	Error error
+	Error string
 	// Form values that created the job
 	ValueMap map[string]string
 	// Time when the job was submitted to the queue
@@ -37,6 +38,9 @@ func (conn *Connection) InsertJob(job *Job) error {
 func (conn *Connection) UpdateJob(job *Job) error {
 	// Update only job matching the same ID
 	_, err := conn.engine.Update(job, &Job{ID: job.ID})
+	if err != nil {
+		log.Printf("Failed to update job %d in DB: %s", job.ID, err.Error())
+	}
 	return err
 }
 

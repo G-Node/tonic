@@ -56,7 +56,7 @@ func (w *Worker) run(j *db.Job) {
 		log.Printf("Job [J%d] %s finished", j.ID, j.Label)
 	} else {
 		log.Printf("Job [J%d]  %s failed: %s", j.ID, j.Label, err)
-		j.Error = err
+		j.Error = err.Error()
 	}
 }
 
