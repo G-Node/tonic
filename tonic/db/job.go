@@ -62,7 +62,7 @@ func (j *Job) IsFinished() bool {
 
 // AllJobs returns all Job entries in the database.
 func (conn *Connection) AllJobs() ([]Job, error) {
-	var alljobs []Job
+	alljobs := make([]Job, 0)
 	if err := conn.engine.Find(&alljobs); err != nil {
 		return nil, err
 	}
