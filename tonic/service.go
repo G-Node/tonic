@@ -87,7 +87,7 @@ func (srv *Tonic) login() {
 		token, err = client.CreateAccessToken(userpass["username"], userpass["password"], gogs.CreateAccessTokenOption{Name: "testbot"})
 		checkError(err)
 	}
-	srv.worker.SetClient(gogs.NewClient(srv.Config.GINServer, token.Sha1))
+	srv.worker.SetClient(worker.NewClient(srv.Config.GINServer, userpass["username"], token.Sha1))
 }
 
 // Start the service (worker and web server).

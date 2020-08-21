@@ -25,6 +25,7 @@ func NewSession(username, token string) *Session {
 	sess := new(Session)
 	sess.ID = uuid.New().String()
 	sess.Token = token
+	sess.UserName = username
 	sess.Created = time.Now()
 	return sess
 }

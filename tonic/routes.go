@@ -16,7 +16,7 @@ import (
 )
 
 // authedHandler is a handler that requires an authenticated user
-type authedHandler func(w http.ResponseWriter, r *http.Request, token string)
+type authedHandler func(w http.ResponseWriter, r *http.Request, session *db.Session)
 
 // reqLoginHandler acts as middleware to check if the user is logged in.
 // Returns a function that matches 'authedHandler()'.
@@ -37,7 +37,7 @@ func (srv *Tonic) reqLoginHandler(handler authedHandler) func(w http.ResponseWri
 		}
 
 		// TODO: Check that the session is still valid (by checking expiration)
-		handler(w, r, session.Token)
+		handler(w, r, session)
 	}
 }
 
@@ -116,7 +116,7 @@ func (srv *Tonic) userLoginPost(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
-func (srv *Tonic) renderForm(w http.ResponseWriter, r *http.Request, token string) {
+func (srv *Tonic) renderForm(w http.ResponseWriter, r *http.Request, sess *db.Session) {
 	tmpl := template.New("layout")
 	tmpl, err := tmpl.Parse(templates.Layout)
 	checkError(err)
@@ -135,7 +135,7 @@ func (srv *Tonic) renderForm(w http.ResponseWriter, r *http.Request, token strin
 	}
 }
 
-func (srv *Tonic) showJob(w http.ResponseWriter, r *http.Request, token string) {
+func (srv *Tonic) showJob(w http.ResponseWriter, r *http.Request, sess *db.Session) {
 	vars := mux.Vars(r)
 	jobid, err := strconv.ParseInt(vars["id"], 10, 64)
 	if err != nil {
@@ -182,7 +182,7 @@ func (srv *Tonic) showJob(w http.ResponseWriter, r *http.Request, token string) 
 		log.Printf("Failed to render form: %v", err)
 	}
 }
-func (srv *Tonic) renderLog(w http.ResponseWriter, r *http.Request, token string) {
+func (srv *Tonic) renderLog(w http.ResponseWriter, r *http.Request, sess *db.Session) {
 	tmpl := template.New("layout")
 	tmpl, err := tmpl.Parse(templates.Layout)
 	checkError(err)
@@ -201,7 +201,7 @@ func (srv *Tonic) renderLog(w http.ResponseWriter, r *http.Request, token string
 	}
 }
 
-func (srv *Tonic) processForm(w http.ResponseWriter, r *http.Request, token string) {
+func (srv *Tonic) processForm(w http.ResponseWriter, r *http.Request, sess *db.Session) {
 	err := r.ParseForm()
 	if err != nil {
 		log.Printf("Failed to parse form: %v", err)
@@ -213,7 +213,7 @@ func (srv *Tonic) processForm(w http.ResponseWriter, r *http.Request, token stri
 		jobValues[key] = postValues.Get(key)
 	}
 
-	client := gogs.NewClient(srv.Config.GINServer, token)
+	client := worker.NewClient(srv.Config.GINServer, sess.UserName, sess.Token)
 	srv.worker.Enqueue(worker.NewUserJob(client, jobValues))
 
 	// redirect to job log

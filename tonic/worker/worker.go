@@ -8,17 +8,29 @@ import (
 	"github.com/gogs/go-gogs-client"
 )
 
-type JobAction func(v map[string]string, botClient, userClient *gogs.Client) ([]string, error)
+type JobAction func(v map[string]string, botClient, userClient *Client) ([]string, error)
+
+// Client embeds gogs.Client and adds the corresponding Username for convenience.
+type Client struct {
+	*gogs.Client
+	UserName string
+}
+
+func NewClient(url, username, token string) *Client {
+	gc := gogs.NewClient(url, token)
+	return &Client{Client: gc, UserName: username}
+}
 
 // UserJob extends db.Job with a user token to perform authenticated tasks on
 // behalf of a given user.
 type UserJob struct {
 	*db.Job
-	client *gogs.Client
+	client *Client
 }
 
-func NewUserJob(client *gogs.Client, values map[string]string) *UserJob {
+func NewUserJob(client *Client, values map[string]string) *UserJob {
 	j := new(UserJob)
+	j.Job = new(db.Job)
 	j.client = client
 	// copy values to avoid mutating ValueMap after it's assigned.
 	j.ValueMap = make(map[string]string, len(values))
@@ -36,7 +48,7 @@ type Worker struct {
 	db     *db.Connection
 	// client is used to perform administrative actions as the bot user that
 	// represents the srevice.
-	client *gogs.Client
+	client *Client
 }
 
 func New(dbconn *db.Connection) *Worker {
@@ -48,7 +60,7 @@ func New(dbconn *db.Connection) *Worker {
 	return w
 }
 
-func (w *Worker) SetClient(c *gogs.Client) {
+func (w *Worker) SetClient(c *Client) {
 	w.client = c
 }
 
