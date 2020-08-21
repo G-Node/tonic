@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/G-Node/tonic/tonic"
+	"github.com/G-Node/tonic/tonic/worker"
 )
 
 func main() {
@@ -32,7 +33,7 @@ func main() {
 	ut.WaitForInterrupt()
 }
 
-func exampleFunc(values map[string]string) ([]string, error) {
+func exampleFunc(values map[string]string, _, _ *worker.Client) ([]string, error) {
 	fail := false
 	msgs := make([]string, 0)
 	for k, v := range values {
