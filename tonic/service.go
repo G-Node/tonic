@@ -2,6 +2,7 @@ package tonic
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -91,12 +92,12 @@ func (srv *Tonic) login() {
 }
 
 // Start the service (worker and web server).
-func (srv *Tonic) Start() {
+func (srv *Tonic) Start() error {
 	if srv.form == nil || len(srv.form) == 0 {
-		log.Fatal("nil or empty form is invalid")
+		return fmt.Errorf("nil or empty form is invalid")
 	}
 	if srv.worker.Action == nil {
-		log.Fatal("nil job function is invalid")
+		return fmt.Errorf("nil job function is invalid")
 	}
 
 	log.Print("Starting worker")
@@ -110,6 +111,7 @@ func (srv *Tonic) Start() {
 	log.Print("Logging in to gin")
 	srv.login()
 	log.Printf("Logged in and ready")
+	return nil
 }
 
 func (srv *Tonic) WaitForInterrupt() {
