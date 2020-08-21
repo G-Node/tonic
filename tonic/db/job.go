@@ -37,7 +37,7 @@ func (conn *Connection) InsertJob(job *Job) error {
 // UpdateJob updates an existing Job entry in the database.
 func (conn *Connection) UpdateJob(job *Job) error {
 	// Update only job matching the same ID
-	_, err := conn.engine.Update(job, &Job{ID: job.ID})
+	_, err := conn.engine.ID(job.ID).Update(job)
 	if err != nil {
 		log.Printf("Failed to update job %d in DB: %s", job.ID, err.Error())
 	}
@@ -73,8 +73,7 @@ func (conn *Connection) AllJobs() ([]Job, error) {
 // GetJob retrieves a Job from the database given its ID.
 func (conn *Connection) GetJob(id int64) (*Job, error) {
 	j := new(Job)
-	j.ID = id
-	if has, err := conn.engine.Get(j); err != nil {
+	if has, err := conn.engine.ID(id).Get(j); err != nil {
 		return nil, err
 	} else if !has {
 		return nil, fmt.Errorf("not found")

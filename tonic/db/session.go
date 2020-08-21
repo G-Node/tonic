@@ -40,11 +40,15 @@ func (conn *Connection) InsertSession(sess *Session) error {
 // GetSession retrieves a session from the database given its ID.
 func (conn *Connection) GetSession(id string) (*Session, error) {
 	sess := new(Session)
-	sess.ID = id
-	if has, err := conn.engine.Get(sess); err != nil {
+	if has, err := conn.engine.ID(id).Get(sess); err != nil {
 		return nil, err
 	} else if !has {
 		return nil, fmt.Errorf("not found")
 	}
 	return sess, nil
+}
+
+func (conn *Connection) DeleteSession(id string) error {
+	_, err := conn.engine.ID(id).Delete(new(Session))
+	return err
 }
