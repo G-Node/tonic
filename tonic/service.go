@@ -14,12 +14,6 @@ import (
 	"github.com/gogs/go-gogs-client"
 )
 
-func checkError(err error) {
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
 type Config struct {
 	GINServer   string
 	Port        uint16
@@ -39,13 +33,15 @@ type Tonic struct {
 	Config *Config
 }
 
-func NewService(form []Element, f worker.JobAction) *Tonic {
+func NewService(form []Element, f worker.JobAction) (*Tonic, error) {
 	srv := new(Tonic)
 	// DB
 	// TODO: Define db path in config
 	log.Print("Initialising database")
 	conn, err := db.New("./test.db")
-	checkError(err)
+	if err != nil {
+		return nil, err
+	}
 	srv.db = conn
 
 	// Worker
@@ -61,34 +57,43 @@ func NewService(form []Element, f worker.JobAction) *Tonic {
 	srv.SetJobAction(f)
 
 	// TODO: Set up logger
-	return srv
+	return srv, nil
 }
 
 // login to configured GIN server as the bot user that represents this service
 // and attach a new authenticated gogs.Client to the service struct.
-func (srv *Tonic) login() {
+func (srv *Tonic) login() error {
 	passfile, err := os.Open("testbot") // TODO: Add to config
 
 	passdata, err := ioutil.ReadAll(passfile)
-	checkError(err)
+	if err != nil {
+		return err
+	}
 
 	userpass := make(map[string]string)
 
 	err = json.Unmarshal(passdata, &userpass)
-	checkError(err)
+	if err != nil {
+		return err
+	}
 
 	client := gogs.NewClient(srv.Config.GINServer, "")
 	tokens, err := client.ListAccessTokens(userpass["username"], userpass["password"])
-	checkError(err)
+	if err != nil {
+		return err
+	}
 
 	var token *gogs.AccessToken
 	if len(tokens) > 0 {
 		token = tokens[0]
 	} else {
 		token, err = client.CreateAccessToken(userpass["username"], userpass["password"], gogs.CreateAccessTokenOption{Name: "testbot"})
-		checkError(err)
+		if err != nil {
+			return err
+		}
 	}
 	srv.worker.SetClient(worker.NewClient(srv.Config.GINServer, userpass["username"], token.Sha1))
+	return nil
 }
 
 // Start the service (worker and web server).

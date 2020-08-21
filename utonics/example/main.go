@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 	"time"
 
@@ -26,7 +27,10 @@ func main() {
 			Description: "Seconds to wait before finishing the job.  Use for simulating long-running jobs.",
 		},
 	}
-	ut := tonic.NewService(elems, exampleFunc)
+	ut, err := tonic.NewService(elems, exampleFunc)
+	if err != nil {
+		log.Fatal(err)
+	}
 	ut.Config = &tonic.Config{GINServer: "https://gin.dev.g-node.org", CookieName: "utonic-example"}
 	ut.Start()
 	defer ut.Stop()

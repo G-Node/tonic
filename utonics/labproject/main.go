@@ -2,10 +2,10 @@ package main
 
 import (
 	"fmt"
-
 	"github.com/G-Node/tonic/tonic"
 	"github.com/G-Node/tonic/tonic/worker"
 	"github.com/gogs/go-gogs-client"
+	"log"
 )
 
 func main() {
@@ -33,7 +33,10 @@ func main() {
 			Required:    false,
 		},
 	}
-	tsrv := tonic.NewService(form, newProject)
+	tsrv, err := tonic.NewService(form, newProject)
+	if err != nil {
+		log.Fatal(err)
+	}
 	tsrv.Config = &tonic.Config{GINServer: "https://gin.dev.g-node.org", CookieName: "utonic-labproject"}
 	tsrv.Start()
 	tsrv.WaitForInterrupt()

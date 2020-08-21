@@ -63,9 +63,15 @@ func (srv *Tonic) setupWebRoutes() error {
 func (srv *Tonic) renderLoginPage(w http.ResponseWriter, r *http.Request) {
 	tmpl := template.New("layout")
 	tmpl, err := tmpl.Parse(templates.Layout)
-	checkError(err)
+	if err != nil {
+		srv.web.ErrorResponse(w, http.StatusInternalServerError, "Internal error: Please contact an administrator")
+		return
+	}
 	tmpl, err = tmpl.Parse(templates.Login)
-	checkError(err)
+	if err != nil {
+		srv.web.ErrorResponse(w, http.StatusInternalServerError, "Internal error: Please contact an administrator")
+		return
+	}
 	tmpl.Execute(w, nil)
 }
 
@@ -119,10 +125,16 @@ func (srv *Tonic) userLoginPost(w http.ResponseWriter, r *http.Request) {
 func (srv *Tonic) renderForm(w http.ResponseWriter, r *http.Request, sess *db.Session) {
 	tmpl := template.New("layout")
 	tmpl, err := tmpl.Parse(templates.Layout)
-	checkError(err)
+	if err != nil {
+		srv.web.ErrorResponse(w, http.StatusInternalServerError, "Internal error: Please contact an administrator")
+		return
+	}
 	tmpl, err = tmpl.Parse(templates.Form)
 
-	checkError(err)
+	if err != nil {
+		srv.web.ErrorResponse(w, http.StatusInternalServerError, "Internal error: Please contact an administrator")
+		return
+	}
 
 	elements := make([]Element, len(srv.form))
 	copy(elements, srv.form)
@@ -151,9 +163,15 @@ func (srv *Tonic) showJob(w http.ResponseWriter, r *http.Request, sess *db.Sessi
 
 	tmpl := template.New("layout")
 	tmpl, err = tmpl.Parse(templates.Layout)
-	checkError(err)
+	if err != nil {
+		srv.web.ErrorResponse(w, http.StatusInternalServerError, "Internal error: Please contact an administrator")
+		return
+	}
 	tmpl, err = tmpl.Parse(templates.Form)
-	checkError(err)
+	if err != nil {
+		srv.web.ErrorResponse(w, http.StatusInternalServerError, "Internal error: Please contact an administrator")
+		return
+	}
 
 	// Set up form and assign values to each matching element
 	data := make(map[string]interface{})
@@ -185,9 +203,15 @@ func (srv *Tonic) showJob(w http.ResponseWriter, r *http.Request, sess *db.Sessi
 func (srv *Tonic) renderLog(w http.ResponseWriter, r *http.Request, sess *db.Session) {
 	tmpl := template.New("layout")
 	tmpl, err := tmpl.Parse(templates.Layout)
-	checkError(err)
+	if err != nil {
+		srv.web.ErrorResponse(w, http.StatusInternalServerError, "Internal error: Please contact an administrator")
+		return
+	}
 	tmpl, err = tmpl.Parse(templates.LogView)
-	checkError(err)
+	if err != nil {
+		srv.web.ErrorResponse(w, http.StatusInternalServerError, "Internal error: Please contact an administrator")
+		return
+	}
 
 	joblog, err := srv.db.AllJobs()
 	if err != nil {
