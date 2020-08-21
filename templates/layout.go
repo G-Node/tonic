@@ -32,8 +32,8 @@ var Layout = `
 								<a class="item brand" href="https://gin.g-node.org/">
 									<img class="ui mini image" src="/assets/favicon.png">
 								</a>
-								<a class="item" href="https://gin.g-node.org/">Back to GIN</a>
-								<a class="item" href="/login">Login</a>
+								<a class="item" href="/">New</a>
+								<a class="item" href="/log">Jobs</a>
 							</div>
 						</div>
 					</div>
