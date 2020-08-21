@@ -9,3 +9,6 @@ coverage: $(SOURCES)
 
 showcoverage: coverage
 	go tool cover -html=coverage
+
+clean:
+	rm -rf coverage
