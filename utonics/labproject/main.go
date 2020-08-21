@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/G-Node/tonic/tonic"
+	"github.com/G-Node/tonic/tonic/worker"
 	"github.com/gogs/go-gogs-client"
 )
 
@@ -40,7 +41,7 @@ func main() {
 
 }
 
-func newProject(values map[string]string, botClient, userClient *gogs.Client) ([]string, error) {
+func newProject(values map[string]string, botClient, userClient *worker.Client) ([]string, error) {
 	organisation := values["organisation"]
 	project := values["project"]
 	description := values["description"]
@@ -73,18 +74,41 @@ func newProject(values map[string]string, botClient, userClient *gogs.Client) ([
 		AutoInit:    true,
 		Readme:      "Default",
 	}
-	msgs = append(msgs, fmt.Sprintf("Creating %s/%v", organisation, projectOpt.Name))
+	msgs = append(msgs, fmt.Sprintf("Creating %s/%s", organisation, projectOpt.Name))
 	repo, err := botClient.CreateOrgRepo(organisation, projectOpt)
 	if err != nil {
 		msgs = append(msgs, fmt.Sprintf("Failed to create repository: %v", err.Error()))
 		return msgs, err
 	}
-
 	msgs = append(msgs, fmt.Sprintf("Repository created: %s", repo.FullName))
+
+	// TODO: Use non admin command when it becomes available
+	msgs = append(msgs, fmt.Sprintf("Creating team %s/%s", organisation, project))
+	team, err := botClient.AdminCreateTeam(organisation, gogs.CreateTeamOption{Name: project, Description: description, Permission: "write"})
+	if err != nil {
+		msgs = append(msgs, fmt.Sprintf("Failed to create team: %s", err.Error()))
+		return msgs, err
+	}
+	msgs = append(msgs, fmt.Sprintf("Team created: %s", team.Name))
+
+	msgs = append(msgs, fmt.Sprintf("Adding user %q to team %q", userClient.UserName, team.Name))
+	botClient.AdminAddTeamMembership(team.ID, userClient.UserName)
+	if err != nil {
+		msgs = append(msgs, fmt.Sprintf("Failed to add user: %s", err.Error()))
+		return msgs, err
+	}
+
+	msgs = append(msgs, fmt.Sprintf("Adding repository %q to team %q", project, team.Name))
+	botClient.AdminAddTeamRepository(team.ID, project)
+	if err != nil {
+		msgs = append(msgs, fmt.Sprintf("Failed to add repository to team: %s", err.Error()))
+		return msgs, err
+	}
+
 	return msgs, nil
 }
 
-func getAvailableOrgs(botClient, userClient *gogs.Client) ([]gogs.Organization, error) {
+func getAvailableOrgs(botClient, userClient *worker.Client) ([]gogs.Organization, error) {
 	// An org is available for management on the service if the user is a
 	// member and the bot is an owner or admin.
 	botOrgs, err := botClient.ListMyOrgs()
