@@ -212,7 +212,15 @@ func (srv *Tonic) renderLog(w http.ResponseWriter, r *http.Request, sess *db.Ses
 		return
 	}
 
-	joblog, err := srv.db.GetAllJobs()
+	cl := worker.NewClient(srv.Config.GINServer, sess.Token)
+	user, err := cl.GetSelfInfo()
+	if err != nil {
+		// TODO: Check for error type (unauthorized?)
+		srv.web.ErrorResponse(w, http.StatusInternalServerError, "Error reading jobs from DB")
+		return
+	}
+
+	joblog, err := srv.db.GetUserJobs(user.ID)
 	if err != nil {
 		srv.web.ErrorResponse(w, http.StatusInternalServerError, "Error reading jobs from DB")
 		return

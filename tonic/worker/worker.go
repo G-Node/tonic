@@ -37,6 +37,8 @@ func NewUserJob(client *Client, values map[string]string) *UserJob {
 	j := new(UserJob)
 	j.Job = new(db.Job)
 	j.client = client
+	user, _ := client.GetSelfInfo() // TODO: Handle error
+	j.UserID = user.ID
 	// copy values to avoid mutating ValueMap after it's assigned.
 	j.ValueMap = make(map[string]string, len(values))
 	for k, v := range values {
