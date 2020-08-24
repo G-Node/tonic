@@ -26,7 +26,7 @@ func New(path string) (*Connection, error) {
 	db.Logger().SetLevel(log.LOG_DEBUG)
 	db.SetMapper(names.GonicMapper{})
 
-	if err := db.Sync2(new(JobInfo)); err != nil {
+	if err := db.Sync2(new(Job), new(Session)); err != nil {
 		return nil, err
 	}
 	return &Connection{db}, nil

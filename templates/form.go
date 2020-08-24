@@ -1,6 +1,6 @@
 package templates
 
-// Temporary form for demonstration with fixed fields
+// Form and Job view page template
 const Form = `
 {{ define "content" }}
 			<div class="ginform">
@@ -28,50 +28,40 @@ const Form = `
 									</div>
 								{{end}}
 							</div>
+
+							{{if .readonly}}
+								<h3 class="ui attached header">Status</h3>
+								<div class="ui attached segment">
+									{{if not .end_time}}
+										<div class="ui message">
+											Job is in queue
+										</div>
+									{{else if .error}}
+										<div class="ui negative message">
+											<b>Job failed with error:</b> {{.error}}
+										</div>
+									{{else}}
+										<div class="ui positive message">
+											Job completed <b>successfully</b>
+										</div>
+									{{end}}
+									<ul class="list">
+										<li><b>Submitted</b> {{.submit_time}}</li>
+										{{if .end_time}}
+											<li><b>Finished</b> {{.end_time}}</li>
+										{{end}}
+									</ul>
+								<h3 class="ui attached header">Job log</h3>
+									<ol class="list" start="0">
+									{{range $msg := .messages}}
+										<li>{{$msg}}</li>
+									{{end}}
+									</ol>
+								{{end}}
+							</div>
 						</form>
 					</div>
 				</div>
 			</div>
 {{ end }}
-`
-
-const LogView = `
-{{define "content"}}
-	<div class="repository file list">
-		<div class="header-wrapper">
-			<div class="ui container">
-				<div class="ui vertically padded grid head">
-					<div class="column">
-						<div class="ui header">
-							<div class="ui huge breadcrumb">
-								<i class="mega-octicon octicon-repo"></i>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
-			<div class="ui tabs container">
-			</div>
-			<div class="ui tabs divider"></div>
-		</div>
-		<div class="ui container">
-			<p id="repo-desc">
-			<span class="description has-emoji">Work log</span>
-			<a class="link" href=""></a>
-			</p>
-			<table id="repo-files-table" class="ui unstackable fixed single line table">
-				<tbody>
-					{{range $job := .}}
-						<tr>
-							<td class="name two wide">J{{$job.ID}}</td>
-							<td class="name text bold nine wide"><a href="/log/{{$job.ID}}">{{$job.Label}}</a></td>
-							<td class="name four wide">{{$job.SubmitTime}}</td>
-							<td class="name four wide">{{$job.EndTime}}</td>
-						</tr>
-					{{end}}
-				</tbody>
-			</table>
-		</div>
-	</div>
-{{end}}
 `
