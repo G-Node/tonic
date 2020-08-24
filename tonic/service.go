@@ -14,6 +14,7 @@ import (
 	"github.com/gogs/go-gogs-client"
 )
 
+// Config containing all the configuration values for a service.
 type Config struct {
 	GINServer   string
 	Port        uint16
@@ -33,6 +34,7 @@ type Tonic struct {
 	Config *Config
 }
 
+// NewService creates a new Tonic with a given form and custom job action.
 func NewService(form []Element, f worker.JobAction) (*Tonic, error) {
 	srv := new(Tonic)
 	// DB
@@ -119,6 +121,7 @@ func (srv *Tonic) Start() error {
 	return nil
 }
 
+// WaitForInterrupt blocks until the service receives an interrupt signal (SIGINT).
 func (srv *Tonic) WaitForInterrupt() {
 	sigchan := make(chan os.Signal, 1)
 	signal.Notify(sigchan, os.Interrupt)
@@ -141,11 +144,13 @@ func (srv *Tonic) Stop() {
 	log.Print("Service stopped")
 }
 
-func (t *Tonic) SetForm(form []Element) {
-	t.form = make([]Element, len(form))
-	copy(t.form, form)
+// SetForm can be used to set or override the form for the service.
+func (srv *Tonic) SetForm(form []Element) {
+	srv.form = make([]Element, len(form))
+	copy(srv.form, form)
 }
 
-func (t *Tonic) SetJobAction(f worker.JobAction) {
-	t.worker.Action = f
+// SetJobAction can be used to set or override the custom job action for the service.
+func (srv *Tonic) SetJobAction(f worker.JobAction) {
+	srv.worker.Action = f
 }

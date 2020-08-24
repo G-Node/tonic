@@ -1,12 +1,15 @@
 package db
 
 import (
+	// Required for xorm sqlite
 	_ "github.com/mattn/go-sqlite3"
 	"xorm.io/xorm"
 	"xorm.io/xorm/log"
 	"xorm.io/xorm/names"
 )
 
+// Connection embeds a xorm.Engine and implements functions for interacting
+// with the Tonic database backend.
 type Connection struct {
 	engine *xorm.Engine
 }

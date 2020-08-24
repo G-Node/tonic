@@ -1,5 +1,7 @@
 package templates
 
+// Fail template for displaying error messages to the user.
+// Use for 4xx and 5xx responses.
 var Fail = `
 {{ define "content" }}
 

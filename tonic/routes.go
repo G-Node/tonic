@@ -1,4 +1,3 @@
-// Common routes and pages
 package tonic
 
 import (
