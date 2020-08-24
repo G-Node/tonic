@@ -212,7 +212,7 @@ func (srv *Tonic) renderLog(w http.ResponseWriter, r *http.Request, sess *db.Ses
 		return
 	}
 
-	joblog, err := srv.db.AllJobs()
+	joblog, err := srv.db.GetAllJobs()
 	if err != nil {
 		srv.web.ErrorResponse(w, http.StatusInternalServerError, "Error reading jobs from DB")
 		return
