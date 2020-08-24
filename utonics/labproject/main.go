@@ -9,8 +9,6 @@ import (
 )
 
 func main() {
-	fmt.Print("Not implemented")
-
 	form := []tonic.Element{
 		{
 			ID:       "laborg",
