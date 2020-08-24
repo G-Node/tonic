@@ -94,8 +94,12 @@ func newProject(values map[string]string, botClient, userClient *worker.Client) 
 	}
 	msgs = append(msgs, fmt.Sprintf("Team created: %s", team.Name))
 
-	msgs = append(msgs, fmt.Sprintf("Adding user %q to team %q", userClient.UserName, team.Name))
-	botClient.AdminAddTeamMembership(team.ID, userClient.UserName)
+	user, err := userClient.GetSelfInfo()
+	if err != nil {
+		return nil, err
+	}
+	msgs = append(msgs, fmt.Sprintf("Adding user %q to team %q", user.Login, team.Name))
+	botClient.AdminAddTeamMembership(team.ID, user.Login)
 	if err != nil {
 		msgs = append(msgs, fmt.Sprintf("Failed to add user: %s", err.Error()))
 		return msgs, err

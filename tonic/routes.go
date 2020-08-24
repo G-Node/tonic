@@ -236,7 +236,7 @@ func (srv *Tonic) processForm(w http.ResponseWriter, r *http.Request, sess *db.S
 		jobValues[key] = postValues.Get(key)
 	}
 
-	client := worker.NewClient(srv.Config.GINServer, sess.UserName, sess.Token)
+	client := worker.NewClient(srv.Config.GINServer, sess.Token)
 	srv.worker.Enqueue(worker.NewUserJob(client, jobValues))
 
 	// redirect to job log

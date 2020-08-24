@@ -12,16 +12,16 @@ import (
 // all UserJobs.
 type JobAction func(v map[string]string, botClient, userClient *Client) ([]string, error)
 
-// Client embeds gogs.Client and adds the corresponding Username for convenience.
+// Client embeds gogs.Client to extend functionality with new convenience
+// methods.  (New clients may be added in the future using the same interface).
 type Client struct {
 	*gogs.Client
-	UserName string
 }
 
 // NewClient returns a new worker Client.
-func NewClient(url, username, token string) *Client {
+func NewClient(url, token string) *Client {
 	gc := gogs.NewClient(url, token)
-	return &Client{Client: gc, UserName: username}
+	return &Client{Client: gc}
 }
 
 // UserJob extends db.Job with a user token to perform authenticated tasks on

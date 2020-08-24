@@ -7,6 +7,8 @@ github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMo
 github.com/go-sql-driver/mysql v1.5.0/go.mod h1:DCzpHaOWr8IXmIStZouvnhqoel9Qv2LBy8hT2VhHyBg=
 github.com/gogs/go-gogs-client v0.0.0-20200308113729-26bb60b9a908 h1:sZjr8FIt094xvKhWfcVu78h4T8dKKzAdSTY9qs/TjRg=
 github.com/gogs/go-gogs-client v0.0.0-20200308113729-26bb60b9a908/go.mod h1:fR6z1Ie6rtF7kl/vBYMfgD5/G5B1blui7z426/sj2DU=
+github.com/gogs/go-gogs-client v0.0.0-20200821174505-4ab716bb71a3 h1:U7xxaFlkeTz5UJvBFCEfq2mOQBZrgxsrIX6XmDHukkE=
+github.com/gogs/go-gogs-client v0.0.0-20200821174505-4ab716bb71a3/go.mod h1:fR6z1Ie6rtF7kl/vBYMfgD5/G5B1blui7z426/sj2DU=
 github.com/golang-sql/civil v0.0.0-20190719163853-cb61b32ac6fe/go.mod h1:8vg3r2VgvsThLBIFL93Qb5yWzgyZWhEmBwUJWevAkK0=
 github.com/golang/protobuf v1.2.0/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U=
 github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db h1:woRePGFeVFfLKN/pOkfl+p/TAqKOfFu+7KPlMVpok/w=
