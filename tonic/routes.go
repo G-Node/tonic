@@ -102,7 +102,7 @@ func (srv *Tonic) userLoginPost(w http.ResponseWriter, r *http.Request) {
 		userToken = tokens[0].Sha1
 	}
 
-	sess := db.NewSession(username, userToken)
+	sess := db.NewSession(userToken)
 
 	cookie := http.Cookie{
 		Name:    srv.Config.CookieName,

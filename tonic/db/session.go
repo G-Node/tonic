@@ -11,21 +11,18 @@ import (
 type Session struct {
 	// Session ID (stored in the cookie)
 	ID string `xorm:"pk"`
-	// Name of user
-	UserName string
 	// App Token for user
 	Token string
 	// Time when the session was created (for expiration)
 	Created time.Time
 }
 
-// NewSession creates a new session for a user with the given key and a new
+// NewSession creates a new session for a user with the given token and a new
 // unique ID.
-func NewSession(username, token string) *Session {
+func NewSession(token string) *Session {
 	sess := new(Session)
 	sess.ID = uuid.New().String()
 	sess.Token = token
-	sess.UserName = username
 	sess.Created = time.Now()
 	return sess
 }
