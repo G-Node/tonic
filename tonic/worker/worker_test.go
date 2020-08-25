@@ -28,7 +28,9 @@ func TestWorkerEmptyJob(t *testing.T) {
 	w.Action = testAction
 	w.Start()
 	defer w.Stop()
-	j := NewUserJob(nil, nil)
+	j := new(UserJob)
+	j.client = new(Client)
+	j.Job = new(db.Job)
 	w.Enqueue(j)
 	time.Sleep(time.Millisecond)
 	if !j.IsFinished() {
@@ -56,15 +58,15 @@ func TestWorkerAction(t *testing.T) {
 	w.Action = testAction
 	w.Start()
 	defer w.Stop()
-	w.client = NewClient("https://example.org", "testadmin", "testadmintoken")
-	j := NewUserJob(NewClient("https://example.org", "testuser", "testusertoken"), map[string]string{"A": "alpha", "Z": "zeta"})
+	w.client = NewClient("https://example.org", "testadmintoken")
+	j := NewUserJob(NewClient("https://example.org", "testusertoken"), map[string]string{"A": "alpha", "Z": "zeta"})
 	w.Enqueue(j)
 	time.Sleep(time.Millisecond)
 	if !j.IsFinished() {
 		t.Fatalf("Job not finished: %+v", j)
 	}
-	if len(j.Messages) != 4 {
-		t.Fatalf("Unexpected number of messages found in finished job: %d != 4", len(j.Messages))
+	if len(j.Messages) != 2 {
+		t.Fatalf("Unexpected number of messages found in finished job: %d != 2", len(j.Messages))
 	}
 	if j.Error != "" {
 		t.Fatalf("Job failed with error: %s", j.Error)
@@ -88,15 +90,15 @@ func TestWorkerJobFail(t *testing.T) {
 	w.Action = testAction
 	w.Start()
 	defer w.Stop()
-	w.client = NewClient("https://example.org", "testadmin", "testadmintoken")
-	j := NewUserJob(NewClient("https://example.org", "testuser", "testusertoken"), map[string]string{"A": "error", "Ω": "omega"})
+	w.client = NewClient("https://example.org", "testadmintoken")
+	j := NewUserJob(NewClient("https://example.org", "testusertoken"), map[string]string{"A": "error", "Ω": "omega"})
 	w.Enqueue(j)
 	time.Sleep(time.Millisecond)
 	if !j.IsFinished() {
 		t.Fatalf("Job not finished: %+v", j)
 	}
-	if len(j.Messages) != 4 {
-		t.Fatalf("Unexpected number of messages found in finished job: %d != 4", len(j.Messages))
+	if len(j.Messages) != 2 {
+		t.Fatalf("Unexpected number of messages found in finished job: %d != 2", len(j.Messages))
 	}
 	if j.Error == "" {
 		t.Fatal("Job succeeded when it should have failed")
@@ -114,14 +116,6 @@ func testAction(values map[string]string, bc, uc *Client) ([]string, error) {
 		if v == "error" {
 			err = fmt.Errorf("Found error value in key %q", k)
 		}
-	}
-
-	if bc != nil {
-		m = append(m, fmt.Sprintf("Bot client has username: %s", bc.UserName))
-	}
-
-	if uc != nil {
-		m = append(m, fmt.Sprintf("User client has username: %s", uc.UserName))
 	}
 
 	return m, err

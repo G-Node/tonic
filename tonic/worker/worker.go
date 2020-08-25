@@ -12,16 +12,16 @@ import (
 // all UserJobs.
 type JobAction func(v map[string]string, botClient, userClient *Client) ([]string, error)
 
-// Client embeds gogs.Client and adds the corresponding Username for convenience.
+// Client embeds gogs.Client to extend functionality with new convenience
+// methods.  (New clients may be added in the future using the same interface).
 type Client struct {
 	*gogs.Client
-	UserName string
 }
 
 // NewClient returns a new worker Client.
-func NewClient(url, username, token string) *Client {
+func NewClient(url, token string) *Client {
 	gc := gogs.NewClient(url, token)
-	return &Client{Client: gc, UserName: username}
+	return &Client{Client: gc}
 }
 
 // UserJob extends db.Job with a user token to perform authenticated tasks on
@@ -37,6 +37,8 @@ func NewUserJob(client *Client, values map[string]string) *UserJob {
 	j := new(UserJob)
 	j.Job = new(db.Job)
 	j.client = client
+	user, _ := client.GetSelfInfo() // TODO: Handle error
+	j.UserID = user.ID
 	// copy values to avoid mutating ValueMap after it's assigned.
 	j.ValueMap = make(map[string]string, len(values))
 	for k, v := range values {
@@ -73,6 +75,7 @@ func (w *Worker) SetClient(c *Client) {
 
 // Enqueue adds the job to the queue and stores it in the database.
 func (w *Worker) Enqueue(j *UserJob) {
+	log.Printf("J: %+v", j)
 	j.SubmitTime = time.Now()
 	// TODO: Find a good way to label jobs otherwise just use IDs in listings
 	var label string

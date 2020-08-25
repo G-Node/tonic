@@ -60,8 +60,8 @@ func (j *Job) IsFinished() bool {
 	return !j.EndTime.IsZero()
 }
 
-// AllJobs returns all Job entries in the database.
-func (conn *Connection) AllJobs() ([]Job, error) {
+// GetAllJobs returns all Job entries in the database.
+func (conn *Connection) GetAllJobs() ([]Job, error) {
 	alljobs := make([]Job, 0)
 	if err := conn.engine.Find(&alljobs); err != nil {
 		return nil, err

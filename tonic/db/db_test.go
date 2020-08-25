@@ -22,7 +22,7 @@ func TestInitEmpty(t *testing.T) {
 	defer db.Close()
 
 	// db should be empty
-	jobs, err := db.AllJobs()
+	jobs, err := db.GetAllJobs()
 	if err != nil {
 		t.Fatalf("Failed to retrieve all jobs from empty db: %s", err.Error())
 	}
@@ -77,7 +77,7 @@ func TestSessionStore(t *testing.T) {
 		t.Fatalf("Failed to delete empty session: %s", err.Error())
 	}
 
-	sess := NewSession("testuser", "faketoken")
+	sess := NewSession("faketoken")
 	if db.InsertSession(sess) != nil {
 		t.Fatalf("Failed inserting new session: %s", err.Error())
 	}
@@ -86,7 +86,7 @@ func TestSessionStore(t *testing.T) {
 		t.Fatal("Succeeded inserting duplicate session")
 	}
 
-	dupe := NewSession("otheruser", "anothertoken")
+	dupe := NewSession("anothertoken")
 	dupe.ID = sess.ID
 	if db.InsertSession(dupe) == nil {
 		t.Fatal("Succeeded inserting session with conflicting ID")
@@ -165,7 +165,7 @@ func TestJobStore(t *testing.T) {
 	}
 
 	nExpected := 2
-	if jobs, err := db.AllJobs(); err != nil {
+	if jobs, err := db.GetAllJobs(); err != nil {
 		t.Fatalf("Failed to retrieve all jobs from db: %s", err.Error())
 	} else if len(jobs) != nExpected {
 		t.Fatalf("Unexpected number of jobs found: %d (expected %d)", len(jobs), nExpected)
@@ -249,7 +249,7 @@ func TestUserJobs(t *testing.T) {
 		}
 	}
 
-	if alljobs, err := db.AllJobs(); err != nil {
+	if alljobs, err := db.GetAllJobs(); err != nil {
 		t.Fatalf("Failed to retrieve all jobs: %s", err.Error())
 	} else {
 		nother := 0
