@@ -94,7 +94,8 @@ func newProject(values map[string]string, botClient, userClient *worker.Client) 
 
 	user, err := userClient.GetSelfInfo()
 	if err != nil {
-		return nil, err
+		msgs = append(msgs, fmt.Sprintf("Failed to retrieve user info: %s", err.Error()))
+		return msgs, err
 	}
 	msgs = append(msgs, fmt.Sprintf("Adding user %q to team %q", user.Login, team.Name))
 	botClient.AdminAddTeamMembership(team.ID, user.Login)
