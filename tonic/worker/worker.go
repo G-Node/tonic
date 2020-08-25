@@ -93,7 +93,7 @@ func (w *Worker) Stop() {
 	w.stop <- true
 }
 
-// run starts calls the custom function of the given job. When the job is
+// run starts the custom function of the given job. When the job is
 // finished, it updates it with the returned messages and error (if any) and
 // updates the corresponding database entry.
 func (w *Worker) run(j *UserJob) {
