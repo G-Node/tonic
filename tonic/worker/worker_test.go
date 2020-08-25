@@ -28,7 +28,9 @@ func TestWorkerEmptyJob(t *testing.T) {
 	w.Action = testAction
 	w.Start()
 	defer w.Stop()
-	j := NewUserJob(nil, nil)
+	j := new(UserJob)
+	j.client = new(Client)
+	j.Job = new(db.Job)
 	w.Enqueue(j)
 	time.Sleep(time.Millisecond)
 	if !j.IsFinished() {

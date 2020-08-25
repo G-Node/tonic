@@ -75,6 +75,7 @@ func (w *Worker) SetClient(c *Client) {
 
 // Enqueue adds the job to the queue and stores it in the database.
 func (w *Worker) Enqueue(j *UserJob) {
+	log.Printf("J: %+v", j)
 	j.SubmitTime = time.Now()
 	// TODO: Find a good way to label jobs otherwise just use IDs in listings
 	var label string
