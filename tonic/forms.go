@@ -1,5 +1,6 @@
 package tonic
 
+// Form is the top level type for defining the web form for user input.
 type Form struct {
 	// The Name appears at the top of all pages in the form and in the HTML
 	// title.
@@ -11,6 +12,7 @@ type Form struct {
 	Pages []Page
 }
 
+// Page represents a single page of a multi-page web form.
 type Page struct {
 	// The Description appears under the form description.  Use it to provide
 	// information about the elements of the specific page.
@@ -19,6 +21,7 @@ type Page struct {
 	Elements []Element
 }
 
+// Element represents a single form element (field).
 type Element struct {
 	// ID of the element.  Must be unique.
 	ID string

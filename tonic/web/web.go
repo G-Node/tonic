@@ -81,12 +81,13 @@ func (ws *Server) ErrorResponse(w http.ResponseWriter, status int, message strin
 	}
 }
 
-// registerHandlers sets up the route handler functions for the web service.
+// Server implements the web server for the Tonic service.
 type Server struct {
 	*http.Server
 	Router *mux.Router
 }
 
+// New returns a web Server with an initialised mux.Router and http.Server.
 func New() *Server {
 	srv := new(Server)
 	srv.Router = new(mux.Router)
@@ -103,6 +104,9 @@ func New() *Server {
 	return srv
 }
 
+// Start starts the embedded web server's ListenAndServe method in a goroutine
+// and returns.  This method does not block. Use WaitForInterrupt() or
+// implement your own blocking function to wait for any other stop condition.
 func (ws *Server) Start() {
 	go func() {
 		if err := ws.ListenAndServe(); err != nil {
@@ -111,6 +115,7 @@ func (ws *Server) Start() {
 	}()
 }
 
+// Stop gracefully stops the web service.
 func (ws *Server) Stop() {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()

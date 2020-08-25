@@ -8,6 +8,8 @@ import (
 	"github.com/gogs/go-gogs-client"
 )
 
+// JobAction is the type of the custom function that needs to be defined for
+// all UserJobs.
 type JobAction func(v map[string]string, botClient, userClient *Client) ([]string, error)
 
 // Client embeds gogs.Client and adds the corresponding Username for convenience.
@@ -16,6 +18,7 @@ type Client struct {
 	UserName string
 }
 
+// NewClient returns a new worker Client.
 func NewClient(url, username, token string) *Client {
 	gc := gogs.NewClient(url, token)
 	return &Client{Client: gc, UserName: username}
@@ -28,6 +31,8 @@ type UserJob struct {
 	client *Client
 }
 
+// NewUserJob returns a new UserJob initialised with the given custom function
+// and user values.
 func NewUserJob(client *Client, values map[string]string) *UserJob {
 	j := new(UserJob)
 	j.Job = new(db.Job)
@@ -51,6 +56,7 @@ type Worker struct {
 	client *Client
 }
 
+// New returns a new Worker attached to the given database.
 func New(dbconn *db.Connection) *Worker {
 	w := new(Worker)
 	// TODO: Define worker queue length in configuration
@@ -60,6 +66,7 @@ func New(dbconn *db.Connection) *Worker {
 	return w
 }
 
+// SetClient assigns a service (bot) Client to the worker.
 func (w *Worker) SetClient(c *Client) {
 	w.client = c
 }
@@ -80,11 +87,15 @@ func (w *Worker) Enqueue(j *UserJob) {
 	w.queue <- j
 }
 
+// Stop sends the stop signal to the worker pool and closes the Job channel.
 func (w *Worker) Stop() {
 	// TODO: Finish ongoing jobs?
 	w.stop <- true
 }
 
+// run starts the custom function of the given job. When the job is
+// finished, it updates it with the returned messages and error (if any) and
+// updates the corresponding database entry.
 func (w *Worker) run(j *UserJob) {
 	defer w.db.UpdateJob(j.Job) // Update job entry in db when done
 	msgs, err := w.Action(j.ValueMap, w.client, j.client)
@@ -98,6 +109,8 @@ func (w *Worker) run(j *UserJob) {
 	}
 }
 
+// Start the worker queue, reading jobs sequentially from the channel and
+// executing their custom function.
 func (w *Worker) Start() {
 	go func() {
 		for {

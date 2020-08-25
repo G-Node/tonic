@@ -30,8 +30,8 @@ func NewSession(username, token string) *Session {
 	return sess
 }
 
-// InsertJob inserts a new Job into the database.  Upon successful return, the
-// Job has a new unique ID.
+// InsertSession inserts a new Session into the database.  Upon successful
+// return, the Job has a new unique ID.
 func (conn *Connection) InsertSession(sess *Session) error {
 	_, err := conn.engine.Insert(sess)
 	return err
@@ -48,6 +48,7 @@ func (conn *Connection) GetSession(id string) (*Session, error) {
 	return sess, nil
 }
 
+// DeleteSession removes the Session matching the given ID from the database.
 func (conn *Connection) DeleteSession(id string) error {
 	_, err := conn.engine.ID(id).Delete(new(Session))
 	return err

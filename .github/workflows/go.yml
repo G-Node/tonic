@@ -37,4 +37,14 @@ jobs:
         done
 
     - name: Test
-      run: go test -v ./...
+      run: go test -v -coverpkg=./... -coverprofile=coverage ./...
+
+    - name: Lint
+      uses: Jerome1337/golint-action@v1.0.2
+      with:
+        golint-path: './...'
+
+    - uses: codecov/codecov-action@v1
+      with:
+        file: ./coverage
+        fail_ci_if_error: true

@@ -1,6 +1,6 @@
 package templates
 
-// Log listing page template
+// LogView template for displaying event log in a list.
 const LogView = `
 {{define "content"}}
 	<div class="repository file list">
