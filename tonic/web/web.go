@@ -2,57 +2,15 @@ package web
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"html/template"
-	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/G-Node/tonic/templates"
-	"github.com/gogs/go-gogs-client"
 	"github.com/gorilla/mux"
 )
-
-// TODO: Set in config
-const ginserver = "https://gin.dev.g-node.org"
-
-func login() string {
-	// TODO: Set password in config
-	passfile, err := os.Open("testbot")
-	if err != nil {
-		return ""
-	}
-
-	passdata, err := ioutil.ReadAll(passfile)
-	if err != nil {
-		return ""
-	}
-
-	userpass := make(map[string]string)
-
-	err = json.Unmarshal(passdata, &userpass)
-	if err != nil {
-		return ""
-	}
-
-	client := gogs.NewClient(ginserver, "")
-	tokens, err := client.ListAccessTokens(userpass["username"], userpass["password"])
-	if err != nil {
-		return ""
-	}
-
-	if len(tokens) > 0 {
-		return tokens[0].Sha1
-	}
-	token, err := client.CreateAccessToken(userpass["username"], userpass["password"], gogs.CreateAccessTokenOption{Name: "testbot"})
-	if err != nil {
-		return ""
-	}
-	return token.Sha1
-}
 
 // ErrorResponse logs an error and renders an error page with the given message,
 // returning the given status code to the user.
