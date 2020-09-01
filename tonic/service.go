@@ -30,13 +30,13 @@ type Tonic struct {
 	worker *worker.Worker
 	log    *log.Logger // TODO: Move all log messages to this logger
 	form   []Element
-	Config *Config
+	config *Config
 }
 
 // NewService creates a new Tonic with a given form and custom job action.
 func NewService(form []Element, f worker.JobAction, config Config) (*Tonic, error) {
 	srv := new(Tonic)
-	srv.Config = &config
+	srv.config = &config
 	// DB
 	log.Print("Initialising database")
 	conn, err := db.New(config.DBPath)
@@ -64,10 +64,10 @@ func NewService(form []Element, f worker.JobAction, config Config) (*Tonic, erro
 // login to configured GIN server as the bot user that represents this service
 // and attach a new authenticated gogs.Client to the service struct.
 func (srv *Tonic) login() error {
-	username := srv.Config.GINUsername
-	password := srv.Config.GINPassword
+	username := srv.config.GINUsername
+	password := srv.config.GINPassword
 
-	client := gogs.NewClient(srv.Config.GINServer, "")
+	client := gogs.NewClient(srv.config.GINServer, "")
 	tokens, err := client.ListAccessTokens(username, password)
 	if err != nil {
 		return err
@@ -82,7 +82,7 @@ func (srv *Tonic) login() error {
 			return err
 		}
 	}
-	srv.worker.SetClient(worker.NewClient(srv.Config.GINServer, token.Sha1))
+	srv.worker.SetClient(worker.NewClient(srv.config.GINServer, token.Sha1))
 	return nil
 }
 
@@ -103,7 +103,7 @@ func (srv *Tonic) Start() error {
 	srv.web.Start()
 	log.Print("Web server started")
 
-	if srv.Config.GINServer != "" {
+	if srv.config.GINServer != "" {
 		log.Print("Logging in to gin")
 		if err := srv.login(); err != nil {
 			return err

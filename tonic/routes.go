@@ -22,7 +22,7 @@ type authedHandler func(w http.ResponseWriter, r *http.Request, session *db.Sess
 // Use for pages that require authentication (currently, everything except the login page).
 func (srv *Tonic) reqLoginHandler(handler authedHandler) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		cookie, err := r.Cookie(srv.Config.CookieName)
+		cookie, err := r.Cookie(srv.config.CookieName)
 		if err != nil || cookie.Value == "" {
 			http.Redirect(w, r, "/login", http.StatusFound)
 			return
@@ -83,7 +83,7 @@ func (srv *Tonic) userLoginPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client := gogs.NewClient(srv.Config.GINServer, "")
+	client := gogs.NewClient(srv.config.GINServer, "")
 	var userToken string
 	tokens, err := client.ListAccessTokens(username, password)
 	if err != nil {
@@ -105,7 +105,7 @@ func (srv *Tonic) userLoginPost(w http.ResponseWriter, r *http.Request) {
 	sess := db.NewSession(userToken)
 
 	cookie := http.Cookie{
-		Name:    srv.Config.CookieName,
+		Name:    srv.config.CookieName,
 		Value:   sess.ID,
 		Expires: time.Now().Add(7 * 24 * time.Hour), // TODO: Configurable expiration
 		Secure:  false,
@@ -212,7 +212,7 @@ func (srv *Tonic) renderLog(w http.ResponseWriter, r *http.Request, sess *db.Ses
 		return
 	}
 
-	cl := worker.NewClient(srv.Config.GINServer, sess.Token)
+	cl := worker.NewClient(srv.config.GINServer, sess.Token)
 	user, err := cl.GetSelfInfo()
 	if err != nil {
 		// TODO: Check for error type (unauthorized?)
@@ -244,7 +244,7 @@ func (srv *Tonic) processForm(w http.ResponseWriter, r *http.Request, sess *db.S
 		jobValues[key] = postValues.Get(key)
 	}
 
-	client := worker.NewClient(srv.Config.GINServer, sess.Token)
+	client := worker.NewClient(srv.config.GINServer, sess.Token)
 	srv.worker.Enqueue(worker.NewUserJob(client, jobValues))
 
 	// redirect to job log
