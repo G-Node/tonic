@@ -1,9 +1,7 @@
 package tonic
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/signal"
@@ -66,22 +64,11 @@ func NewService(form []Element, f worker.JobAction, config Config) (*Tonic, erro
 // login to configured GIN server as the bot user that represents this service
 // and attach a new authenticated gogs.Client to the service struct.
 func (srv *Tonic) login() error {
-	passfile, err := os.Open("testbot") // TODO: Add to config
-
-	passdata, err := ioutil.ReadAll(passfile)
-	if err != nil {
-		return err
-	}
-
-	userpass := make(map[string]string)
-
-	err = json.Unmarshal(passdata, &userpass)
-	if err != nil {
-		return err
-	}
+	username := srv.Config.GINUsername
+	password := srv.Config.GINPassword
 
 	client := gogs.NewClient(srv.Config.GINServer, "")
-	tokens, err := client.ListAccessTokens(userpass["username"], userpass["password"])
+	tokens, err := client.ListAccessTokens(username, password)
 	if err != nil {
 		return err
 	}
@@ -90,7 +77,7 @@ func (srv *Tonic) login() error {
 	if len(tokens) > 0 {
 		token = tokens[0]
 	} else {
-		token, err = client.CreateAccessToken(userpass["username"], userpass["password"], gogs.CreateAccessTokenOption{Name: "testbot"})
+		token, err = client.CreateAccessToken(username, password, gogs.CreateAccessTokenOption{Name: "tonic"})
 		if err != nil {
 			return err
 		}
@@ -116,9 +103,13 @@ func (srv *Tonic) Start() error {
 	srv.web.Start()
 	log.Print("Web server started")
 
-	log.Print("Logging in to gin")
-	srv.login()
-	log.Printf("Logged in and ready")
+	if srv.Config.GINServer != "" {
+		log.Print("Logging in to gin")
+		if err := srv.login(); err != nil {
+			return err
+		}
+		log.Printf("Logged in and ready")
+	}
 	return nil
 }
 
