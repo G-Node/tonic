@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/G-Node/tonic/templates"
@@ -37,7 +38,7 @@ func (ws *Server) ErrorResponse(w http.ResponseWriter, status int, message strin
 		message,
 	}
 	if err := tmpl.Execute(w, &errinfo); err != nil {
-		log.Printf("Error rendering fail page: %v", err)
+		ws.log.Printf("Error rendering fail page: %v", err)
 	}
 }
 
@@ -45,11 +46,15 @@ func (ws *Server) ErrorResponse(w http.ResponseWriter, status int, message strin
 type Server struct {
 	*http.Server
 	Router *mux.Router
+	log    *log.Logger
 }
 
 // New returns a web Server with an initialised mux.Router and http.Server.
 func New(port uint16) *Server {
 	srv := new(Server)
+	// Set default logger.
+	// Can be later replaced using the SetLogger() method.
+	srv.log = log.New(os.Stderr, "", log.LstdFlags)
 	srv.Router = new(mux.Router)
 	httpsrv := new(http.Server)
 	httpsrv.Handler = srv.Router
@@ -63,13 +68,19 @@ func New(port uint16) *Server {
 	return srv
 }
 
+// SetLogger sets the logger instance for the web service.  If unset the service
+// defines its own logger with the same configuration as the standard Logger.
+func (ws *Server) SetLogger(l *log.Logger) {
+	ws.log = l
+}
+
 // Start starts the embedded web server's ListenAndServe method in a goroutine
 // and returns.  This method does not block. Use WaitForInterrupt() or
 // implement your own blocking function to wait for any other stop condition.
 func (ws *Server) Start() {
 	go func() {
 		if err := ws.ListenAndServe(); err != nil {
-			log.Println(err)
+			ws.log.Println(err)
 		}
 	}()
 }

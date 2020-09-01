@@ -28,7 +28,7 @@ type Tonic struct {
 	web    *web.Server
 	db     *db.Connection
 	worker *worker.Worker
-	log    *log.Logger // TODO: Move all log messages to this logger
+	log    *log.Logger
 	form   []Element
 	config *Config
 }
@@ -36,9 +36,13 @@ type Tonic struct {
 // NewService creates a new Tonic with a given form and custom job action.
 func NewService(form []Element, f worker.JobAction, config Config) (*Tonic, error) {
 	srv := new(Tonic)
+
+	// Logger
+	srv.log = log.New(os.Stderr, "tonic: ", log.LstdFlags) // TODO: Support naming the service and use the name as a logger prefix
+
 	srv.config = &config
 	// DB
-	log.Print("Initialising database")
+	srv.log.Print("Initialising database")
 	conn, err := db.New(config.DBPath)
 	if err != nil {
 		return nil, err
@@ -46,11 +50,15 @@ func NewService(form []Element, f worker.JobAction, config Config) (*Tonic, erro
 	srv.db = conn
 
 	// Worker
-	log.Print("Starting worker")
+	srv.log.Print("Starting worker")
 	srv.worker = worker.New(srv.db)
+	// Share logger with worker
+	srv.worker.SetLogger(srv.log)
 
 	// Web server
 	srv.web = web.New(config.Port)
+	// Share logger with web service
+	srv.web.SetLogger(srv.log)
 	srv.setupWebRoutes()
 
 	// set form and func
@@ -59,6 +67,15 @@ func NewService(form []Element, f worker.JobAction, config Config) (*Tonic, erro
 
 	// TODO: Set up logger
 	return srv, nil
+}
+
+// SetLogger sets the logger instance for the tonic service and the included
+// worker queue and web service.  If unset the service defines its own logger
+// with the same configuration as the standard Logger and the prefix 'tonic: '.
+func (srv *Tonic) SetLogger(l *log.Logger) {
+	srv.log = l
+	srv.worker.SetLogger(l)
+	srv.web.SetLogger(l)
 }
 
 // login to configured GIN server as the bot user that represents this service
@@ -95,20 +112,20 @@ func (srv *Tonic) Start() error {
 		return fmt.Errorf("nil job function is invalid")
 	}
 
-	log.Print("Starting worker")
+	srv.log.Print("Starting worker")
 	srv.worker.Start()
-	log.Print("Worker started")
+	srv.log.Print("Worker started")
 
-	log.Print("Starting web service")
+	srv.log.Print("Starting web service")
 	srv.web.Start()
-	log.Print("Web server started")
+	srv.log.Print("Web server started")
 
 	if srv.config.GINServer != "" {
-		log.Print("Logging in to gin")
+		srv.log.Print("Logging in to gin")
 		if err := srv.login(); err != nil {
 			return err
 		}
-		log.Printf("Logged in and ready")
+		srv.log.Printf("Logged in and ready")
 	}
 	return nil
 }
@@ -123,17 +140,17 @@ func (srv *Tonic) WaitForInterrupt() {
 // Stop the service by gracefully shutting down the web service, stopping the
 // worker pool, and closing the database connection, in that order.
 func (srv *Tonic) Stop() {
-	log.Print("Stopping web service")
+	srv.log.Print("Stopping web service")
 	srv.web.Stop()
 
-	log.Print("Stopping worker queue")
+	srv.log.Print("Stopping worker queue")
 	srv.worker.Stop()
 
-	log.Print("Closing database connection")
+	srv.log.Print("Closing database connection")
 	if err := srv.db.Close(); err != nil {
-		log.Printf("Error closing database: %v", err)
+		srv.log.Printf("Error closing database: %v", err)
 	}
-	log.Print("Service stopped")
+	srv.log.Print("Service stopped")
 }
 
 // SetForm can be used to set or override the form for the service.

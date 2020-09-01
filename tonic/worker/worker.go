@@ -2,6 +2,7 @@ package worker
 
 import (
 	"log"
+	"os"
 	"time"
 
 	"github.com/G-Node/tonic/tonic/db"
@@ -54,18 +55,30 @@ type Worker struct {
 	Action JobAction
 	db     *db.Connection
 	// client is used to perform administrative actions as the bot user that
-	// represents the srevice.
+	// represents the service.
 	client *Client
+	log    *log.Logger
 }
 
 // New returns a new Worker attached to the given database.
 func New(dbconn *db.Connection) *Worker {
 	w := new(Worker)
+	// Set default logger.
+	// Can be later replaced using the SetLogger() method.
+	w.log = log.New(os.Stderr, "", log.LstdFlags)
+
 	// TODO: Define worker queue length in configuration
 	w.queue = make(chan *UserJob, 100)
 	w.stop = make(chan bool)
 	w.db = dbconn
 	return w
+}
+
+// SetLogger sets the logger instance for the worker service.  If unset the
+// service defines its own logger with the same configuration as the standard
+// Logger.
+func (w *Worker) SetLogger(l *log.Logger) {
+	w.log = l
 }
 
 // SetClient assigns a service (bot) Client to the worker.
@@ -75,7 +88,7 @@ func (w *Worker) SetClient(c *Client) {
 
 // Enqueue adds the job to the queue and stores it in the database.
 func (w *Worker) Enqueue(j *UserJob) {
-	log.Printf("J: %+v", j)
+	w.log.Printf("J: %+v", j)
 	j.SubmitTime = time.Now()
 	// TODO: Find a good way to label jobs otherwise just use IDs in listings
 	var label string
@@ -85,7 +98,7 @@ func (w *Worker) Enqueue(j *UserJob) {
 	j.Label = label
 	err := w.db.InsertJob(j.Job)
 	if err != nil {
-		log.Printf("Error inserting job %+v into db: %v", j, err)
+		w.log.Printf("Error inserting job %+v into db: %v", j, err)
 	}
 	w.queue <- j
 }
@@ -105,9 +118,9 @@ func (w *Worker) run(j *UserJob) {
 	j.EndTime = time.Now()
 	j.Messages = msgs
 	if err == nil {
-		log.Printf("Job [J%d] %s finished", j.ID, j.Label)
+		w.log.Printf("Job [J%d] %s finished", j.ID, j.Label)
 	} else {
-		log.Printf("Job [J%d]  %s failed: %s", j.ID, j.Label, err)
+		w.log.Printf("Job [J%d]  %s failed: %s", j.ID, j.Label, err)
 		j.Error = err.Error()
 	}
 }

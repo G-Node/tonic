@@ -2,7 +2,6 @@ package tonic
 
 import (
 	"html/template"
-	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -142,7 +141,7 @@ func (srv *Tonic) renderForm(w http.ResponseWriter, r *http.Request, sess *db.Se
 	data["elements"] = elements
 
 	if err := tmpl.Execute(w, data); err != nil {
-		log.Printf("Failed to render form: %v", err)
+		srv.log.Printf("Failed to render form: %v", err)
 	}
 }
 
@@ -196,7 +195,7 @@ func (srv *Tonic) showJob(w http.ResponseWriter, r *http.Request, sess *db.Sessi
 	data["readonly"] = true
 
 	if err := tmpl.Execute(w, data); err != nil {
-		log.Printf("Failed to render form: %v", err)
+		srv.log.Printf("Failed to render form: %v", err)
 	}
 }
 func (srv *Tonic) renderLog(w http.ResponseWriter, r *http.Request, sess *db.Session) {
@@ -226,7 +225,7 @@ func (srv *Tonic) renderLog(w http.ResponseWriter, r *http.Request, sess *db.Ses
 		return
 	}
 	if err := tmpl.Execute(w, joblog); err != nil {
-		log.Printf("Failed to render log: %v", err)
+		srv.log.Printf("Failed to render log: %v", err)
 		srv.web.ErrorResponse(w, http.StatusInternalServerError, "Error showing job listing")
 		return
 	}
@@ -235,7 +234,7 @@ func (srv *Tonic) renderLog(w http.ResponseWriter, r *http.Request, sess *db.Ses
 func (srv *Tonic) processForm(w http.ResponseWriter, r *http.Request, sess *db.Session) {
 	err := r.ParseForm()
 	if err != nil {
-		log.Printf("Failed to parse form: %v", err)
+		srv.log.Printf("Failed to parse form: %v", err)
 	}
 	postValues := r.PostForm
 	jobValues := make(map[string]string)
