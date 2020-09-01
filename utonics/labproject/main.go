@@ -31,11 +31,18 @@ func main() {
 			Required:    false,
 		},
 	}
-	tsrv, err := tonic.NewService(form, newProject)
+	config := tonic.Config{
+		GINServer:   "https://gin.dev.g-node.org",
+		GINUsername: "", // TODO: Load from file
+		GINPassword: "", // TODO: Load from file
+		CookieName:  "utonic-labproject",
+		Port:        3000,
+		DBPath:      "./labproject.db",
+	}
+	tsrv, err := tonic.NewService(form, newProject, config)
 	if err != nil {
 		log.Fatal(err)
 	}
-	tsrv.Config = &tonic.Config{GINServer: "https://gin.dev.g-node.org", CookieName: "utonic-labproject"}
 	tsrv.Start()
 	tsrv.WaitForInterrupt()
 	tsrv.Stop()

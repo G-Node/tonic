@@ -11,7 +11,6 @@ import (
 )
 
 func main() {
-
 	elems := []tonic.Element{
 		{
 			Name:  "name",
@@ -27,11 +26,18 @@ func main() {
 			Description: "Seconds to wait before finishing the job.  Use for simulating long-running jobs.",
 		},
 	}
-	ut, err := tonic.NewService(elems, exampleFunc)
+	config := tonic.Config{
+		GINServer:   "", // not used in example
+		GINUsername: "", // not used in example
+		GINPassword: "", // not used in example
+		CookieName:  "utonic-example",
+		Port:        3000,
+		DBPath:      "./example.db",
+	}
+	ut, err := tonic.NewService(elems, exampleFunc, config)
 	if err != nil {
 		log.Fatal(err)
 	}
-	ut.Config = &tonic.Config{GINServer: "https://gin.dev.g-node.org", CookieName: "utonic-example"}
 	ut.Start()
 	defer ut.Stop()
 	ut.WaitForInterrupt()

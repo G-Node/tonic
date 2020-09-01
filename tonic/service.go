@@ -20,6 +20,7 @@ type Config struct {
 	Port        uint16
 	CookieName  string
 	DBPath      string
+	GINUsername string
 	GINPassword string
 }
 
@@ -35,12 +36,12 @@ type Tonic struct {
 }
 
 // NewService creates a new Tonic with a given form and custom job action.
-func NewService(form []Element, f worker.JobAction) (*Tonic, error) {
+func NewService(form []Element, f worker.JobAction, config Config) (*Tonic, error) {
 	srv := new(Tonic)
+	srv.Config = &config
 	// DB
-	// TODO: Define db path in config
 	log.Print("Initialising database")
-	conn, err := db.New("./test.db")
+	conn, err := db.New(config.DBPath)
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +52,7 @@ func NewService(form []Element, f worker.JobAction) (*Tonic, error) {
 	srv.worker = worker.New(srv.db)
 
 	// Web server
-	srv.web = web.New()
+	srv.web = web.New(config.Port)
 	srv.setupWebRoutes()
 
 	// set form and func

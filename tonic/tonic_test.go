@@ -6,17 +6,17 @@ import (
 )
 
 func TestTonicFailStart(t *testing.T) {
-	if s, _ := NewService(nil, nil); s.Start() == nil {
+	if s, _ := NewService(nil, nil, Config{}); s.Start() == nil {
 		s.Stop()
 		t.Fatal("Service start succeeded; should have failed")
 	}
 
-	if s, _ := NewService(make([]Element, 0), nil); s.Start() == nil {
+	if s, _ := NewService(make([]Element, 0), nil, Config{}); s.Start() == nil {
 		s.Stop()
 		t.Fatal("Service start succeeded; should have failed")
 	}
 
-	if s, _ := NewService(make([]Element, 10), nil); s.Start() == nil {
+	if s, _ := NewService(make([]Element, 10), nil, Config{}); s.Start() == nil {
 		s.Stop()
 		t.Fatal("Service start succeeded; should have failed")
 	}
@@ -37,7 +37,7 @@ func TestTonicFull(t *testing.T) {
 			Description: "Field of tests, part 2",
 		},
 	}
-	srv, err := NewService(f, testAction)
+	srv, err := NewService(f, testAction, Config{})
 	if err != nil {
 		t.Fatalf("Failed to initialise tonic service: %s", err.Error())
 	}

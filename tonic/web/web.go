@@ -3,15 +3,17 @@ package web
 import (
 	"context"
 	"encoding/json"
-	"github.com/G-Node/tonic/templates"
-	"github.com/gogs/go-gogs-client"
-	"github.com/gorilla/mux"
+	"fmt"
 	"html/template"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/G-Node/tonic/templates"
+	"github.com/gogs/go-gogs-client"
+	"github.com/gorilla/mux"
 )
 
 // TODO: Set in config
@@ -88,14 +90,13 @@ type Server struct {
 }
 
 // New returns a web Server with an initialised mux.Router and http.Server.
-func New() *Server {
+func New(port uint16) *Server {
 	srv := new(Server)
 	srv.Router = new(mux.Router)
 	httpsrv := new(http.Server)
 	httpsrv.Handler = srv.Router
 
-	// TODO: read port from config
-	httpsrv.Addr = ":3000"
+	httpsrv.Addr = fmt.Sprintf(":%d", port)
 	// Good practice to set timeouts to avoid Slowloris attacks.
 	httpsrv.WriteTimeout = time.Second * 15
 	httpsrv.ReadTimeout = time.Second * 15
