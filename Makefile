@@ -8,12 +8,10 @@ utonics: $(SOURCES)
 	mkdir -p build
 	go build -v -o ./build ./utonics/...
 
-test: coverage
-
-coverage: $(SOURCES)
+test: $(SOURCES)
 	go test -coverpkg=./... -coverprofile=coverage ./...
 
-showcoverage: coverage
+showcoverage: test
 	go tool cover -html=coverage
 
 clean:
