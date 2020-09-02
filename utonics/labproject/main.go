@@ -1,11 +1,14 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/G-Node/tonic/tonic"
 	"github.com/G-Node/tonic/tonic/worker"
 	"github.com/gogs/go-gogs-client"
+	"io/ioutil"
 	"log"
+	"os"
 )
 
 func main() {
@@ -31,11 +34,19 @@ func main() {
 			Required:    false,
 		},
 	}
-	tsrv, err := tonic.NewService(form, newProject)
+	username, password := readPassfile("testbot")
+	config := tonic.Config{
+		GINServer:   "https://gin.dev.g-node.org",
+		GINUsername: username,
+		GINPassword: password,
+		CookieName:  "utonic-labproject",
+		Port:        3000,
+		DBPath:      "./labproject.db",
+	}
+	tsrv, err := tonic.NewService(form, newProject, config)
 	if err != nil {
 		log.Fatal(err)
 	}
-	tsrv.Config = &tonic.Config{GINServer: "https://gin.dev.g-node.org", CookieName: "utonic-labproject"}
 	tsrv.Start()
 	tsrv.WaitForInterrupt()
 	tsrv.Stop()
@@ -149,4 +160,21 @@ func getAvailableOrgs(botClient, userClient *worker.Client) ([]gogs.Organization
 	}
 
 	return validOrgs, nil
+}
+
+func readPassfile(filename string) (string, string) {
+	passfile, err := os.Open(filename)
+	if err != nil {
+		log.Fatal(err)
+	}
+	passdata, err := ioutil.ReadAll(passfile)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	userpass := make(map[string]string)
+	if err := json.Unmarshal(passdata, &userpass); err != nil {
+		log.Fatal(err)
+	}
+	return userpass["username"], userpass["password"]
 }

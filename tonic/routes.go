@@ -2,7 +2,6 @@ package tonic
 
 import (
 	"html/template"
-	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -22,7 +21,7 @@ type authedHandler func(w http.ResponseWriter, r *http.Request, session *db.Sess
 // Use for pages that require authentication (currently, everything except the login page).
 func (srv *Tonic) reqLoginHandler(handler authedHandler) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		cookie, err := r.Cookie(srv.Config.CookieName)
+		cookie, err := r.Cookie(srv.config.CookieName)
 		if err != nil || cookie.Value == "" {
 			http.Redirect(w, r, "/login", http.StatusFound)
 			return
@@ -83,7 +82,7 @@ func (srv *Tonic) userLoginPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client := gogs.NewClient(srv.Config.GINServer, "")
+	client := gogs.NewClient(srv.config.GINServer, "")
 	var userToken string
 	tokens, err := client.ListAccessTokens(username, password)
 	if err != nil {
@@ -105,7 +104,7 @@ func (srv *Tonic) userLoginPost(w http.ResponseWriter, r *http.Request) {
 	sess := db.NewSession(userToken)
 
 	cookie := http.Cookie{
-		Name:    srv.Config.CookieName,
+		Name:    srv.config.CookieName,
 		Value:   sess.ID,
 		Expires: time.Now().Add(7 * 24 * time.Hour), // TODO: Configurable expiration
 		Secure:  false,
@@ -142,7 +141,7 @@ func (srv *Tonic) renderForm(w http.ResponseWriter, r *http.Request, sess *db.Se
 	data["elements"] = elements
 
 	if err := tmpl.Execute(w, data); err != nil {
-		log.Printf("Failed to render form: %v", err)
+		srv.log.Printf("Failed to render form: %v", err)
 	}
 }
 
@@ -196,7 +195,7 @@ func (srv *Tonic) showJob(w http.ResponseWriter, r *http.Request, sess *db.Sessi
 	data["readonly"] = true
 
 	if err := tmpl.Execute(w, data); err != nil {
-		log.Printf("Failed to render form: %v", err)
+		srv.log.Printf("Failed to render form: %v", err)
 	}
 }
 func (srv *Tonic) renderLog(w http.ResponseWriter, r *http.Request, sess *db.Session) {
@@ -212,7 +211,7 @@ func (srv *Tonic) renderLog(w http.ResponseWriter, r *http.Request, sess *db.Ses
 		return
 	}
 
-	cl := worker.NewClient(srv.Config.GINServer, sess.Token)
+	cl := worker.NewClient(srv.config.GINServer, sess.Token)
 	user, err := cl.GetSelfInfo()
 	if err != nil {
 		// TODO: Check for error type (unauthorized?)
@@ -226,7 +225,7 @@ func (srv *Tonic) renderLog(w http.ResponseWriter, r *http.Request, sess *db.Ses
 		return
 	}
 	if err := tmpl.Execute(w, joblog); err != nil {
-		log.Printf("Failed to render log: %v", err)
+		srv.log.Printf("Failed to render log: %v", err)
 		srv.web.ErrorResponse(w, http.StatusInternalServerError, "Error showing job listing")
 		return
 	}
@@ -235,7 +234,7 @@ func (srv *Tonic) renderLog(w http.ResponseWriter, r *http.Request, sess *db.Ses
 func (srv *Tonic) processForm(w http.ResponseWriter, r *http.Request, sess *db.Session) {
 	err := r.ParseForm()
 	if err != nil {
-		log.Printf("Failed to parse form: %v", err)
+		srv.log.Printf("Failed to parse form: %v", err)
 	}
 	postValues := r.PostForm
 	jobValues := make(map[string]string)
@@ -244,7 +243,7 @@ func (srv *Tonic) processForm(w http.ResponseWriter, r *http.Request, sess *db.S
 		jobValues[key] = postValues.Get(key)
 	}
 
-	client := worker.NewClient(srv.Config.GINServer, sess.Token)
+	client := worker.NewClient(srv.config.GINServer, sess.Token)
 	srv.worker.Enqueue(worker.NewUserJob(client, jobValues))
 
 	// redirect to job log

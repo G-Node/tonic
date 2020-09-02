@@ -2,55 +2,16 @@ package web
 
 import (
 	"context"
-	"encoding/json"
-	"github.com/G-Node/tonic/templates"
-	"github.com/gogs/go-gogs-client"
-	"github.com/gorilla/mux"
+	"fmt"
 	"html/template"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/G-Node/tonic/templates"
+	"github.com/gorilla/mux"
 )
-
-// TODO: Set in config
-const ginserver = "https://gin.dev.g-node.org"
-
-func login() string {
-	// TODO: Set password in config
-	passfile, err := os.Open("testbot")
-	if err != nil {
-		return ""
-	}
-
-	passdata, err := ioutil.ReadAll(passfile)
-	if err != nil {
-		return ""
-	}
-
-	userpass := make(map[string]string)
-
-	err = json.Unmarshal(passdata, &userpass)
-	if err != nil {
-		return ""
-	}
-
-	client := gogs.NewClient(ginserver, "")
-	tokens, err := client.ListAccessTokens(userpass["username"], userpass["password"])
-	if err != nil {
-		return ""
-	}
-
-	if len(tokens) > 0 {
-		return tokens[0].Sha1
-	}
-	token, err := client.CreateAccessToken(userpass["username"], userpass["password"], gogs.CreateAccessTokenOption{Name: "testbot"})
-	if err != nil {
-		return ""
-	}
-	return token.Sha1
-}
 
 // ErrorResponse logs an error and renders an error page with the given message,
 // returning the given status code to the user.
@@ -77,7 +38,7 @@ func (ws *Server) ErrorResponse(w http.ResponseWriter, status int, message strin
 		message,
 	}
 	if err := tmpl.Execute(w, &errinfo); err != nil {
-		log.Printf("Error rendering fail page: %v", err)
+		ws.log.Printf("Error rendering fail page: %v", err)
 	}
 }
 
@@ -85,17 +46,20 @@ func (ws *Server) ErrorResponse(w http.ResponseWriter, status int, message strin
 type Server struct {
 	*http.Server
 	Router *mux.Router
+	log    *log.Logger
 }
 
 // New returns a web Server with an initialised mux.Router and http.Server.
-func New() *Server {
+func New(port uint16) *Server {
 	srv := new(Server)
+	// Set default logger.
+	// Can be later replaced using the SetLogger() method.
+	srv.log = log.New(os.Stderr, "", log.LstdFlags)
 	srv.Router = new(mux.Router)
 	httpsrv := new(http.Server)
 	httpsrv.Handler = srv.Router
 
-	// TODO: read port from config
-	httpsrv.Addr = ":3000"
+	httpsrv.Addr = fmt.Sprintf(":%d", port)
 	// Good practice to set timeouts to avoid Slowloris attacks.
 	httpsrv.WriteTimeout = time.Second * 15
 	httpsrv.ReadTimeout = time.Second * 15
@@ -104,13 +68,19 @@ func New() *Server {
 	return srv
 }
 
+// SetLogger sets the logger instance for the web service.  If unset the service
+// defines its own logger with the same configuration as the standard Logger.
+func (ws *Server) SetLogger(l *log.Logger) {
+	ws.log = l
+}
+
 // Start starts the embedded web server's ListenAndServe method in a goroutine
 // and returns.  This method does not block. Use WaitForInterrupt() or
 // implement your own blocking function to wait for any other stop condition.
 func (ws *Server) Start() {
 	go func() {
 		if err := ws.ListenAndServe(); err != nil {
-			log.Println(err)
+			ws.log.Println(err)
 		}
 	}()
 }
