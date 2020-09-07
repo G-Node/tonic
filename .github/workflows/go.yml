@@ -37,7 +37,7 @@ jobs:
         done
 
     - name: Test
-      run: go test -v -coverpkg=./... -coverprofile=coverage ./...
+      run: go test -v -race -coverpkg=./... -coverprofile=coverage ./...
 
     - name: Lint
       uses: Jerome1337/golint-action@v1.0.2

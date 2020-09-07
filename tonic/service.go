@@ -50,22 +50,24 @@ func NewService(form []Element, f worker.JobAction, config Config) (*Tonic, erro
 	srv.db = conn
 
 	// Worker
-	srv.log.Print("Starting worker")
+	srv.log.Print("Initialising worker")
 	srv.worker = worker.New(srv.db)
 	// Share logger with worker
 	srv.worker.SetLogger(srv.log)
 
 	// Web server
+	srv.log.Print("Initialising web service")
 	srv.web = web.New(config.Port)
 	// Share logger with web service
 	srv.web.SetLogger(srv.log)
+
+	srv.log.Print("Setting up router")
 	srv.setupWebRoutes()
 
 	// set form and func
 	srv.SetForm(form)
 	srv.SetJobAction(f)
 
-	// TODO: Set up logger
 	return srv, nil
 }
 
@@ -125,7 +127,7 @@ func (srv *Tonic) Start() error {
 		if err := srv.login(); err != nil {
 			return err
 		}
-		srv.log.Printf("Logged in and ready")
+		srv.log.Print("Logged in and ready")
 	}
 	return nil
 }

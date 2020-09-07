@@ -88,6 +88,7 @@ func (w *Worker) SetClient(c *Client) {
 
 // Enqueue adds the job to the queue and stores it in the database.
 func (w *Worker) Enqueue(j *UserJob) {
+	j.Lock()
 	w.log.Printf("J: %+v", j)
 	j.SubmitTime = time.Now()
 	// TODO: Find a good way to label jobs otherwise just use IDs in listings
@@ -96,6 +97,7 @@ func (w *Worker) Enqueue(j *UserJob) {
 		break
 	}
 	j.Label = label
+	j.Unlock()
 	err := w.db.InsertJob(j.Job)
 	if err != nil {
 		w.log.Printf("Error inserting job %+v into db: %v", j, err)
@@ -113,6 +115,8 @@ func (w *Worker) Stop() {
 // finished, it updates it with the returned messages and error (if any) and
 // updates the corresponding database entry.
 func (w *Worker) run(j *UserJob) {
+	j.Lock()
+	defer j.Unlock()
 	defer w.db.UpdateJob(j.Job) // Update job entry in db when done
 	msgs, err := w.Action(j.ValueMap, w.client, j.client)
 	j.EndTime = time.Now()

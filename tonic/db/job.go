@@ -3,6 +3,7 @@ package db
 import (
 	"fmt"
 	"log"
+	"sync"
 	"time"
 )
 
@@ -25,11 +26,15 @@ type Job struct {
 	SubmitTime time.Time
 	// Time when the job finished (0 if ongoing)
 	EndTime time.Time
+	// mutex for locking
+	sync.Mutex `xorm:"-"`
 }
 
 // InsertJob inserts a new Job into the database.  Upon successful return, the
 // Job has a new unique ID.
 func (conn *Connection) InsertJob(job *Job) error {
+	job.Lock()
+	defer job.Unlock()
 	_, err := conn.engine.Insert(job) // job ID is assigned on insertion
 	return err
 }
@@ -48,7 +53,7 @@ func (conn *Connection) UpdateJob(job *Job) error {
 func (conn *Connection) GetUserJobs(uid int64) ([]Job, error) {
 	var userjobs []Job
 	condition := Job{UserID: uid}
-	if err := conn.engine.Find(&userjobs, condition); err != nil {
+	if err := conn.engine.Find(&userjobs, &condition); err != nil {
 		return nil, err
 	}
 
@@ -57,6 +62,8 @@ func (conn *Connection) GetUserJobs(uid int64) ([]Job, error) {
 
 // IsFinished returns true if the Job has finished (has an EndTime).
 func (j *Job) IsFinished() bool {
+	j.Lock()
+	defer j.Unlock()
 	return !j.EndTime.IsZero()
 }
 
