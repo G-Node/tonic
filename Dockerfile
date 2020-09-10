@@ -29,7 +29,6 @@ WORKDIR /tonic
 # Copy binary and resources into runner image
 COPY --from=binbuilder /tonic/${service} /tonic
 COPY ./assets /tonic/assets
-COPY testbot /tonic/testbot
 
 ENTRYPOINT /tonic/${service}
 EXPOSE 3000
