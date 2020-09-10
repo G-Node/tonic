@@ -1,5 +1,29 @@
 package tonic
 
+const (
+	CheckboxInput ElementType = "checkbox"
+	ColorInput    ElementType = "color"
+	DateInput     ElementType = "date"
+	DateTimeInput ElementType = "datetime-local"
+	EmailInput    ElementType = "email"
+	FileInput     ElementType = "file"
+	HiddenInput   ElementType = "hidden"
+	ImageInput    ElementType = "image"
+	MonthInput    ElementType = "month"
+	NumberInput   ElementType = "number"
+	PasswordInput ElementType = "password"
+	RadioInput    ElementType = "radio"
+	RangeInput    ElementType = "range"
+	SearchInput   ElementType = "search"
+	TelInput      ElementType = "tel"
+	TextInput     ElementType = "text"
+	TimeInput     ElementType = "time"
+	URLInput      ElementType = "url"
+	WeekInput     ElementType = "week"
+)
+
+type ElementType string
+
 // Form is the top level type for defining the web form for user input.
 type Form struct {
 	// The Name appears at the top of all pages in the form and in the HTML
@@ -38,4 +62,9 @@ type Element struct {
 	// the input field.  Can be used to provide extra information such as input
 	// constraints.
 	Description string
+	// Type is the HTML input element type.
+	Type ElementType
+	// DataList should contain a set of values that represent the permissible
+	// or recommended options available to the element.
+	DataList []string
 }
