@@ -91,7 +91,8 @@ func (srv *Tonic) userLoginPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(tokens) == 0 {
-		token, err := client.CreateAccessToken(username, password, gogs.CreateAccessTokenOption{Name: "testbot"})
+		appName := srv.form.Name
+		token, err := client.CreateAccessToken(username, password, gogs.CreateAccessTokenOption{Name: appName})
 		userToken = token.Sha1
 		if err != nil {
 			srv.web.ErrorResponse(w, http.StatusUnauthorized, "authentication failed")
@@ -124,21 +125,19 @@ func (srv *Tonic) renderForm(w http.ResponseWriter, r *http.Request, sess *db.Se
 	tmpl := template.New("layout")
 	tmpl, err := tmpl.Parse(templates.Layout)
 	if err != nil {
+		srv.log.Printf("Failed to parse Layout template: %s", err.Error())
 		srv.web.ErrorResponse(w, http.StatusInternalServerError, "Internal error: Please contact an administrator")
 		return
 	}
 	tmpl, err = tmpl.Parse(templates.Form)
-
 	if err != nil {
+		srv.log.Printf("Failed to parse Form template: %s", err.Error())
 		srv.web.ErrorResponse(w, http.StatusInternalServerError, "Internal error: Please contact an administrator")
 		return
 	}
 
-	elements := make([]Element, len(srv.form))
-	copy(elements, srv.form)
-
 	data := make(map[string]interface{})
-	data["elements"] = elements
+	data["form"] = srv.form
 
 	if err := tmpl.Execute(w, data); err != nil {
 		srv.log.Printf("Failed to render form: %v", err)
@@ -149,12 +148,13 @@ func (srv *Tonic) showJob(w http.ResponseWriter, r *http.Request, sess *db.Sessi
 	vars := mux.Vars(r)
 	jobid, err := strconv.ParseInt(vars["id"], 10, 64)
 	if err != nil {
+		srv.log.Printf("Failed to parse job ID %s: %s", vars["id"], err.Error())
 		srv.web.ErrorResponse(w, http.StatusInternalServerError, "Invalid ID")
 		return
 	}
 	job, err := srv.db.GetJob(jobid)
-
 	if err != nil || job == nil {
+		srv.log.Printf("Job not found %d: %s", jobid, err.Error())
 		srv.web.ErrorResponse(w, http.StatusNotFound, "No such job")
 		return
 	}
@@ -162,19 +162,21 @@ func (srv *Tonic) showJob(w http.ResponseWriter, r *http.Request, sess *db.Sessi
 	tmpl := template.New("layout")
 	tmpl, err = tmpl.Parse(templates.Layout)
 	if err != nil {
+		srv.log.Printf("Failed to parse Layout template: %s", err.Error())
 		srv.web.ErrorResponse(w, http.StatusInternalServerError, "Internal error: Please contact an administrator")
 		return
 	}
 	tmpl, err = tmpl.Parse(templates.Form)
 	if err != nil {
+		srv.log.Printf("Failed to parse Form template: %s", err.Error())
 		srv.web.ErrorResponse(w, http.StatusInternalServerError, "Internal error: Please contact an administrator")
 		return
 	}
 
 	// Set up form and assign values to each matching element
 	data := make(map[string]interface{})
-	elements := make([]Element, len(srv.form))
-	copy(elements, srv.form)
+	page := srv.form.Pages[0] // TODO: All pages
+	elements := page.Elements
 	for idx := range elements {
 		if val, ok := job.ValueMap[elements[idx].Name]; ok {
 			elements[idx].Value = val
@@ -182,7 +184,7 @@ func (srv *Tonic) showJob(w http.ResponseWriter, r *http.Request, sess *db.Sessi
 	}
 
 	// Add timestamps and exit message to template data and set read-only
-	data["elements"] = elements
+	data["form"] = srv.form
 	timefmt := "15:04:05 Mon Jan 2 2006"
 	data["submit_time"] = job.SubmitTime.Format(timefmt)
 	if job.IsFinished() {
@@ -238,8 +240,9 @@ func (srv *Tonic) processForm(w http.ResponseWriter, r *http.Request, sess *db.S
 	}
 	postValues := r.PostForm
 	jobValues := make(map[string]string)
-	for idx := range srv.form {
-		key := srv.form[idx].Name
+	elements := srv.form.Pages[0].Elements // TODO: All pages
+	for idx := range elements {
+		key := elements[idx].Name
 		jobValues[key] = postValues.Get(key)
 	}
 

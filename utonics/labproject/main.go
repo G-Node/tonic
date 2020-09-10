@@ -12,7 +12,7 @@ import (
 )
 
 func main() {
-	form := []tonic.Element{
+	elems := []tonic.Element{
 		{
 			ID:       "laborg",
 			Label:    "Lab organisation",
@@ -33,6 +33,15 @@ func main() {
 			Description: "Long project description",
 			Required:    false,
 		},
+	}
+	page := tonic.Page{
+		Description: "Creating a new project will create a new set of repositories based on the lab template and a team for granting access to all project members.",
+		Elements:    elems,
+	}
+	form := tonic.Form{
+		Pages:       []tonic.Page{page},
+		Name:        "Project creation",
+		Description: "",
 	}
 	username, password := readPassfile("testbot")
 	config := tonic.Config{

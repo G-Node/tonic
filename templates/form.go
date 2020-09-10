@@ -9,17 +9,18 @@ const Form = `
 						<form class="ui form" action="/" method="post">
 							<input type="hidden" name="_csrf" value="">
 							<h3 class="ui top attached header">
-								Demo form
+								{{.form.Name}}
 							</h3>
+							{{.form.Description}}
 							<div class="ui attached segment">
-								{{with .elements}}
-									{{range $idx, $elem := .}}
-										<div class="inline {{if $elem.Required}}required{{end}} field ">
-											<label for="{{$elem.ID}}">{{$elem.Label}}</label>
-											<input id="{{$elem.ID}}" name="{{$elem.Name}}" value="{{$elem.Value}}" autofocus {{if $elem.Required}}required{{end}} {{if $.readonly}}readonly{{end}}>
-											<span class="help">{{$elem.Description}}</span>
-										</div>
-									{{end}}
+								{{$page := index .form.Pages 0}}
+								{{$page.Description}}
+								{{range $idx, $elem := $page.Elements}}
+									<div class="inline {{if $elem.Required}}required{{end}} field ">
+										<label for="{{$elem.ID}}">{{$elem.Label}}</label>
+										<input id="{{$elem.ID}}" name="{{$elem.Name}}" value="{{$elem.Value}}" autofocus {{if $elem.Required}}required{{end}} {{if $.readonly}}readonly{{end}}>
+										<span class="help">{{$elem.Description}}</span>
+									</div>
 								{{end}}
 								{{if not .readonly}}
 									<div class="inline field">

@@ -29,12 +29,12 @@ type Tonic struct {
 	db     *db.Connection
 	worker *worker.Worker
 	log    *log.Logger
-	form   []Element
+	form   *Form
 	config *Config
 }
 
 // NewService creates a new Tonic with a given form and custom job action.
-func NewService(form []Element, f worker.JobAction, config Config) (*Tonic, error) {
+func NewService(form Form, f worker.JobAction, config Config) (*Tonic, error) {
 	srv := new(Tonic)
 
 	// Logger
@@ -107,7 +107,7 @@ func (srv *Tonic) login() error {
 
 // Start the service (worker and web server).
 func (srv *Tonic) Start() error {
-	if srv.form == nil || len(srv.form) == 0 {
+	if srv.form == nil || len(srv.form.Pages) == 0 {
 		return fmt.Errorf("nil or empty form is invalid")
 	}
 	if srv.worker.Action == nil {
@@ -156,9 +156,18 @@ func (srv *Tonic) Stop() {
 }
 
 // SetForm can be used to set or override the form for the service.
-func (srv *Tonic) SetForm(form []Element) {
-	srv.form = make([]Element, len(form))
-	copy(srv.form, form)
+func (srv *Tonic) SetForm(form Form) {
+	srv.form = new(Form)
+	// copy elements manually
+	srv.form.Name = form.Name
+	srv.form.Description = form.Description
+	srv.form.Pages = make([]Page, len(form.Pages))
+	for pageIdx := range form.Pages {
+		elements := make([]Element, len(form.Pages[pageIdx].Elements))
+		copy(elements, form.Pages[pageIdx].Elements)
+		srv.form.Pages[pageIdx].Elements = elements
+		srv.form.Pages[pageIdx].Description = form.Pages[pageIdx].Description
+	}
 }
 
 // SetJobAction can be used to set or override the custom job action for the service.

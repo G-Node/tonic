@@ -26,6 +26,15 @@ func main() {
 			Description: "Seconds to wait before finishing the job.  Use for simulating long-running jobs.",
 		},
 	}
+	page := tonic.Page{
+		Description: "Page 1 of example form",
+		Elements:    elems,
+	}
+	form := tonic.Form{
+		Pages:       []tonic.Page{page},
+		Name:        "Tonic example form",
+		Description: "",
+	}
 	config := tonic.Config{
 		GINServer:   "", // not used in example
 		GINUsername: "", // not used in example
@@ -34,7 +43,7 @@ func main() {
 		Port:        3000,
 		DBPath:      "./example.db",
 	}
-	ut, err := tonic.NewService(elems, exampleFunc, config)
+	ut, err := tonic.NewService(form, exampleFunc, config)
 	if err != nil {
 		log.Fatal(err)
 	}
