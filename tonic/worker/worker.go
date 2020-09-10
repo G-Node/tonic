@@ -10,9 +10,17 @@ import (
 	"github.com/gogs/go-gogs-client"
 )
 
-// JobAction is the type of the custom function that needs to be defined for
-// all UserJobs.
-type JobAction func(v map[string]string, botClient, userClient *Client) ([]string, error)
+// PreAction is a function that receives the Form struct as defined for the
+// service.  It should return modified Form struct with values, constraints, or
+// elements modified based on the permissions or actions supported for the bot
+// and/or user, or any other external constraint that the function can
+// evaluate.
+type PreAction func(f form.Form, botClient, userClient *Client) (*form.Form, error)
+
+// PostAction is a function that receives the form values when the form is
+// submitted.  It should perform actions for the user through the service given
+// the form values and return a list of messages and/or an error if it fails.
+type PostAction func(v map[string]string, botClient, userClient *Client) ([]string, error)
 
 // Client embeds gogs.Client to extend functionality with new convenience
 // methods.  (New clients may be added in the future using the same interface).
@@ -51,10 +59,15 @@ func NewUserJob(client *Client, values map[string]string) *UserJob {
 
 // Worker pool with queue for running Jobs asynchronously.
 type Worker struct {
-	queue  chan *UserJob
-	stop   chan bool
-	Action JobAction
-	db     *db.Connection
+	queue chan *UserJob
+	// Sending any value through 'stop' will stop the worker.
+	stop chan bool
+	// PreAction is used to prepare data to show the user, such as populating
+	// form lists or showing information on static pages.
+	PreAction PreAction
+	// PostAction
+	PostAction PostAction
+	db         *db.Connection
 	// client is used to perform administrative actions as the bot user that
 	// represents the service.
 	client *Client
@@ -119,7 +132,7 @@ func (w *Worker) run(j *UserJob) {
 	j.Lock()
 	defer j.Unlock()
 	defer w.db.UpdateJob(j.Job) // Update job entry in db when done
-	msgs, err := w.Action(j.ValueMap, w.client, j.client)
+	msgs, err := w.PostAction(j.ValueMap, w.client, j.client)
 	j.EndTime = time.Now()
 	j.Messages = msgs
 	if err == nil {

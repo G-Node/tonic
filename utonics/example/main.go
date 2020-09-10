@@ -44,7 +44,7 @@ func main() {
 		Port:        3000,
 		DBPath:      "./example.db",
 	}
-	ut, err := tonic.NewService(form, exampleFunc, config)
+	ut, err := tonic.NewService(form, nil, exampleFunc, config)
 	if err != nil {
 		log.Fatal(err)
 	}

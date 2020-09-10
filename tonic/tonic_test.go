@@ -15,7 +15,7 @@ import (
 )
 
 func TestTonicFailStart(t *testing.T) {
-	if s, _ := NewService(form.Form{}, nil, Config{}); s.Start() == nil {
+	if s, _ := NewService(form.Form{}, nil, nil, Config{}); s.Start() == nil {
 		s.Stop()
 		t.Fatal("Service start succeeded; should have failed")
 	}
@@ -38,7 +38,7 @@ func TestTonicWithForm(t *testing.T) {
 	}
 	f := new(form.Form)
 	f.Pages = []form.Page{{Elements: elems}}
-	srv, err := NewService(*f, noopAction, Config{})
+	srv, err := NewService(*f, nil, noopAction, Config{})
 	if err != nil {
 		t.Fatalf("Failed to initialise tonic service: %s", err.Error())
 	}
@@ -56,7 +56,7 @@ func noopAction(values map[string]string, _, _ *worker.Client) ([]string, error)
 func TestTonicWithAction(t *testing.T) {
 	f := new(form.Form)
 	f.Pages = []form.Page{{Elements: make([]form.Element, 1)}}
-	srv, err := NewService(*f, echoAction, Config{})
+	srv, err := NewService(*f, nil, echoAction, Config{})
 	if err != nil {
 		t.Fatalf("Failed to initialise tonic service: %s", err.Error())
 	}
@@ -111,7 +111,7 @@ func (lb *LogBuffer) String() string {
 func TestLoggers(t *testing.T) {
 	f := new(form.Form)
 	f.Pages = []form.Page{{Elements: make([]form.Element, 1)}}
-	srv, err := NewService(*f, noopAction, Config{})
+	srv, err := NewService(*f, nil, noopAction, Config{})
 	if err != nil {
 		t.Fatalf("Failed to initialise tonic service: %s", err.Error())
 	}

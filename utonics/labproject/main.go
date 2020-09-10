@@ -66,7 +66,7 @@ func main() {
 		Port:        3000,
 		DBPath:      "./labproject.db",
 	}
-	tsrv, err := tonic.NewService(form, newProject, config)
+	tsrv, err := tonic.NewService(form, nil, newProject, config)
 	if err != nil {
 		log.Fatal(err)
 	}

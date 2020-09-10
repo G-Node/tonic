@@ -35,7 +35,7 @@ type Tonic struct {
 }
 
 // NewService creates a new Tonic with a given form and custom job action.
-func NewService(webform form.Form, action worker.JobAction, config Config) (*Tonic, error) {
+func NewService(webform form.Form, preAction worker.PreAction, postAction worker.PostAction, config Config) (*Tonic, error) {
 	srv := new(Tonic)
 
 	// Logger
@@ -67,7 +67,8 @@ func NewService(webform form.Form, action worker.JobAction, config Config) (*Ton
 
 	// set form and func
 	srv.SetForm(webform)
-	srv.SetJobAction(action)
+	srv.SetPreAction(preAction)
+	srv.SetPostAction(postAction)
 
 	return srv, nil
 }
@@ -109,10 +110,10 @@ func (srv *Tonic) login() error {
 // Start the service (worker and web server).
 func (srv *Tonic) Start() error {
 	if srv.form == nil || len(srv.form.Pages) == 0 {
-		return fmt.Errorf("nil or empty form is invalid")
+		return fmt.Errorf("No form specified: nil or empty form is invalid")
 	}
-	if srv.worker.Action == nil {
-		return fmt.Errorf("nil job function is invalid")
+	if srv.worker.PostAction == nil && srv.worker.PreAction == nil {
+		return fmt.Errorf("No action specified: Either Pre or Post action should be set.")
 	}
 
 	srv.log.Print("Starting worker")
@@ -171,7 +172,12 @@ func (srv *Tonic) SetForm(webform form.Form) {
 	}
 }
 
-// SetJobAction can be used to set or override the custom job action for the service.
-func (srv *Tonic) SetJobAction(f worker.JobAction) {
-	srv.worker.Action = f
+// SetPreAction can be used to set or override the custom pre-form submission action for the service.
+func (srv *Tonic) SetPreAction(f worker.PreAction) {
+	srv.worker.PreAction = f
+}
+
+// SetPostAction can be used to set or override the custom post-form submission action for the service.
+func (srv *Tonic) SetPostAction(f worker.PostAction) {
+	srv.worker.PostAction = f
 }
