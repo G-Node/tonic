@@ -13,14 +13,16 @@ const Form = `
 							</h3>
 							{{.form.Description}}
 							<div class="ui attached segment">
-								{{$page := index .form.Pages 0}}
-								{{$page.Description}}
-								{{range $idx, $elem := $page.Elements}}
-									<div class="inline {{if $elem.Required}}required{{end}} field ">
-										<label for="{{$elem.ID}}">{{$elem.Label}}</label>
-										<input id="{{$elem.ID}}" name="{{$elem.Name}}" value="{{$elem.Value}}" autofocus {{if $elem.Required}}required{{end}} {{if $.readonly}}readonly{{end}}>
-										<span class="help">{{$elem.Description}}</span>
-									</div>
+								{{range $page := .form.Pages}}
+									 <p>{{$page.Description}}</p> 
+									{{range $elem := $page.Elements}}
+										<div class="inline {{if $elem.Required}}required{{end}} field ">
+											<label for="{{$elem.ID}}">{{$elem.Label}}</label>
+											<input id="{{$elem.ID}}" name="{{$elem.Name}}" value="{{$elem.Value}}" autofocus {{if $elem.Required}}required{{end}} {{if $.readonly}}readonly{{end}}>
+											<span class="help">{{$elem.Description}}</span>
+										</div>
+									{{end}}
+									<div class="ui divider"></div>
 								{{end}}
 								{{if not .readonly}}
 									<div class="inline field">

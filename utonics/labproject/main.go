@@ -34,12 +34,24 @@ func main() {
 			Required:    false,
 		},
 	}
-	page := tonic.Page{
+	page1 := tonic.Page{
 		Description: "Creating a new project will create a new set of repositories based on the lab template and a team for granting access to all project members.",
 		Elements:    elems,
 	}
+	page2 := tonic.Page{
+		Description: "Extra repository submodules.  Each of the following elements creates an extra submodule which can be managed independently.  It has its own access permissions, public visibility, and can be published separatrely.  It is linked at the top level of the main repository.",
+		Elements: []tonic.Element{
+			{
+				ID:          "rawdata",
+				Label:       "Raw data submodule",
+				Name:        "rawdata",
+				Description: "Add a raw data submodule",
+				Required:    false,
+			},
+		},
+	}
 	form := tonic.Form{
-		Pages:       []tonic.Page{page},
+		Pages:       []tonic.Page{page1, page2},
 		Name:        "Project creation",
 		Description: "",
 	}
