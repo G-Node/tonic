@@ -7,11 +7,12 @@ import (
 	"time"
 
 	"github.com/G-Node/tonic/tonic"
+	"github.com/G-Node/tonic/tonic/form"
 	"github.com/G-Node/tonic/tonic/worker"
 )
 
 func main() {
-	elems := []tonic.Element{
+	elems := []form.Element{
 		{
 			Name:  "name",
 			Label: "Name",
@@ -26,12 +27,12 @@ func main() {
 			Description: "Seconds to wait before finishing the job.  Use for simulating long-running jobs.",
 		},
 	}
-	page := tonic.Page{
+	page := form.Page{
 		Description: "Page 1 of example form",
 		Elements:    elems,
 	}
-	form := tonic.Form{
-		Pages:       []tonic.Page{page},
+	form := form.Form{
+		Pages:       []form.Page{page},
 		Name:        "Tonic example form",
 		Description: "",
 	}

@@ -3,16 +3,18 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/G-Node/tonic/tonic"
-	"github.com/G-Node/tonic/tonic/worker"
-	"github.com/gogs/go-gogs-client"
 	"io/ioutil"
 	"log"
 	"os"
+
+	"github.com/G-Node/tonic/tonic"
+	"github.com/G-Node/tonic/tonic/form"
+	"github.com/G-Node/tonic/tonic/worker"
+	"github.com/gogs/go-gogs-client"
 )
 
 func main() {
-	elems := []tonic.Element{
+	elems := []form.Element{
 		{
 			ID:       "laborg",
 			Label:    "Lab organisation",
@@ -34,13 +36,13 @@ func main() {
 			Required:    false,
 		},
 	}
-	page1 := tonic.Page{
+	page1 := form.Page{
 		Description: "Creating a new project will create a new set of repositories based on the lab template and a team for granting access to all project members.",
 		Elements:    elems,
 	}
-	page2 := tonic.Page{
+	page2 := form.Page{
 		Description: "Extra repository submodules.  Each of the following elements creates an extra submodule which can be managed independently.  It has its own access permissions, public visibility, and can be published separatrely.  It is linked at the top level of the main repository.",
-		Elements: []tonic.Element{
+		Elements: []form.Element{
 			{
 				ID:          "rawdata",
 				Label:       "Raw data submodule",
@@ -50,8 +52,8 @@ func main() {
 			},
 		},
 	}
-	form := tonic.Form{
-		Pages:       []tonic.Page{page1, page2},
+	form := form.Form{
+		Pages:       []form.Page{page1, page2},
 		Name:        "Project creation",
 		Description: "",
 	}

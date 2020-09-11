@@ -1,4 +1,4 @@
-package tonic
+package form
 
 const (
 	CheckboxInput ElementType = "checkbox"
@@ -22,6 +22,8 @@ const (
 	WeekInput     ElementType = "week"
 )
 
+// ElementType defines the type of a form input element:
+// https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input
 type ElementType string
 
 // Form is the top level type for defining the web form for user input.

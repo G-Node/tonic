@@ -7,6 +7,7 @@ import (
 	"os/signal"
 
 	"github.com/G-Node/tonic/tonic/db"
+	"github.com/G-Node/tonic/tonic/form"
 	"github.com/G-Node/tonic/tonic/web"
 	"github.com/G-Node/tonic/tonic/worker"
 	"github.com/gogs/go-gogs-client"
@@ -29,12 +30,12 @@ type Tonic struct {
 	db     *db.Connection
 	worker *worker.Worker
 	log    *log.Logger
-	form   *Form
+	form   *form.Form
 	config *Config
 }
 
 // NewService creates a new Tonic with a given form and custom job action.
-func NewService(form Form, f worker.JobAction, config Config) (*Tonic, error) {
+func NewService(webform form.Form, action worker.JobAction, config Config) (*Tonic, error) {
 	srv := new(Tonic)
 
 	// Logger
@@ -65,8 +66,8 @@ func NewService(form Form, f worker.JobAction, config Config) (*Tonic, error) {
 	srv.setupWebRoutes()
 
 	// set form and func
-	srv.SetForm(form)
-	srv.SetJobAction(f)
+	srv.SetForm(webform)
+	srv.SetJobAction(action)
 
 	return srv, nil
 }
@@ -156,17 +157,17 @@ func (srv *Tonic) Stop() {
 }
 
 // SetForm can be used to set or override the form for the service.
-func (srv *Tonic) SetForm(form Form) {
-	srv.form = new(Form)
+func (srv *Tonic) SetForm(webform form.Form) {
+	srv.form = new(form.Form)
 	// copy elements manually
-	srv.form.Name = form.Name
-	srv.form.Description = form.Description
-	srv.form.Pages = make([]Page, len(form.Pages))
-	for pageIdx := range form.Pages {
-		elements := make([]Element, len(form.Pages[pageIdx].Elements))
-		copy(elements, form.Pages[pageIdx].Elements)
+	srv.form.Name = webform.Name
+	srv.form.Description = webform.Description
+	srv.form.Pages = make([]form.Page, len(webform.Pages))
+	for pageIdx := range webform.Pages {
+		elements := make([]form.Element, len(webform.Pages[pageIdx].Elements))
+		copy(elements, webform.Pages[pageIdx].Elements)
 		srv.form.Pages[pageIdx].Elements = elements
-		srv.form.Pages[pageIdx].Description = form.Pages[pageIdx].Description
+		srv.form.Pages[pageIdx].Description = webform.Pages[pageIdx].Description
 	}
 }
 

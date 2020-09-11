@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/G-Node/tonic/tonic/db"
+	"github.com/G-Node/tonic/tonic/form"
 	"github.com/gogs/go-gogs-client"
 )
 
