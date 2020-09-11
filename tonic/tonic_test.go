@@ -10,28 +10,19 @@ import (
 	"testing"
 	"time"
 
+	"github.com/G-Node/tonic/tonic/form"
 	"github.com/G-Node/tonic/tonic/worker"
 )
 
 func TestTonicFailStart(t *testing.T) {
-	if s, _ := NewService(nil, nil, Config{}); s.Start() == nil {
-		s.Stop()
-		t.Fatal("Service start succeeded; should have failed")
-	}
-
-	if s, _ := NewService(make([]Element, 0), nil, Config{}); s.Start() == nil {
-		s.Stop()
-		t.Fatal("Service start succeeded; should have failed")
-	}
-
-	if s, _ := NewService(make([]Element, 10), nil, Config{}); s.Start() == nil {
+	if s, _ := NewService(form.Form{}, nil, Config{}); s.Start() == nil {
 		s.Stop()
 		t.Fatal("Service start succeeded; should have failed")
 	}
 }
 
 func TestTonicWithForm(t *testing.T) {
-	f := []Element{
+	elems := []form.Element{
 		{
 			ID:          "el1",
 			Name:        "testfield1",
@@ -45,7 +36,9 @@ func TestTonicWithForm(t *testing.T) {
 			Description: "Field of tests, part 2",
 		},
 	}
-	srv, err := NewService(f, noopAction, Config{})
+	f := new(form.Form)
+	f.Pages = []form.Page{{Elements: elems}}
+	srv, err := NewService(*f, noopAction, Config{})
 	if err != nil {
 		t.Fatalf("Failed to initialise tonic service: %s", err.Error())
 	}
@@ -61,7 +54,9 @@ func noopAction(values map[string]string, _, _ *worker.Client) ([]string, error)
 }
 
 func TestTonicWithAction(t *testing.T) {
-	srv, err := NewService(make([]Element, 1), echoAction, Config{})
+	f := new(form.Form)
+	f.Pages = []form.Page{{Elements: make([]form.Element, 1)}}
+	srv, err := NewService(*f, echoAction, Config{})
 	if err != nil {
 		t.Fatalf("Failed to initialise tonic service: %s", err.Error())
 	}
@@ -114,7 +109,9 @@ func (lb *LogBuffer) String() string {
 }
 
 func TestLoggers(t *testing.T) {
-	srv, err := NewService(make([]Element, 1), noopAction, Config{})
+	f := new(form.Form)
+	f.Pages = []form.Page{{Elements: make([]form.Element, 1)}}
+	srv, err := NewService(*f, noopAction, Config{})
 	if err != nil {
 		t.Fatalf("Failed to initialise tonic service: %s", err.Error())
 	}
