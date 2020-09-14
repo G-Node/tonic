@@ -119,6 +119,15 @@ func (w *Worker) Enqueue(j *UserJob) {
 	w.queue <- j
 }
 
+func (w *Worker) PreprocessForm(f *form.Form, userClient *Client) (*form.Form, error) {
+	if f == nil {
+		// nothing to do
+		return f, nil
+	}
+	botClient := w.client
+	return w.PreAction(*f, botClient, userClient)
+}
+
 // Stop sends the stop signal to the worker pool and closes the Job channel.
 func (w *Worker) Stop() {
 	// TODO: Finish ongoing jobs?

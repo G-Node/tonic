@@ -136,8 +136,12 @@ func (srv *Tonic) renderForm(w http.ResponseWriter, r *http.Request, sess *db.Se
 		return
 	}
 
+	userForm, err := srv.worker.PreprocessForm(srv.form, worker.NewClient(srv.config.GINServer, sess.Token))
+	if err != nil {
+		// TODO: Show error to user
+	}
 	data := make(map[string]interface{})
-	data["form"] = srv.form
+	data["form"] = userForm
 
 	if err := tmpl.Execute(w, data); err != nil {
 		srv.log.Printf("Failed to render form: %v", err)
