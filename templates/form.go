@@ -18,7 +18,7 @@ const Form = `
 									{{range $elem := $page.Elements}}
 										<div class="inline {{if $elem.Required}}required{{end}} field ">
 											<label for="{{$elem.ID}}">{{$elem.Label}}</label>
-											<input id="{{$elem.ID}}" name="{{$elem.Name}}" value="{{$elem.Value}}" autofocus {{if $elem.Required}}required{{end}} {{if or $elem.ReadOnly $.readonly}}readonly{{end}}>
+											<input type="{{$elem.Type}}" id="{{$elem.ID}}" name="{{$elem.Name}}" value="{{$elem.Value}}" autofocus {{if $elem.Required}}required{{end}} {{if or $elem.ReadOnly $.readonly}}readonly{{end}}>
 											<span class="help">{{$elem.Description}}</span>
 										</div>
 									{{end}}

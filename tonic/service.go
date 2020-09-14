@@ -167,6 +167,12 @@ func (srv *Tonic) SetForm(webform form.Form) {
 	for pageIdx := range webform.Pages {
 		elements := make([]form.Element, len(webform.Pages[pageIdx].Elements))
 		copy(elements, webform.Pages[pageIdx].Elements)
+		// any element without a type will be set to text
+		for idx := range elements {
+			if elements[idx].Type == "" {
+				elements[idx].Type = form.TextInput
+			}
+		}
 		srv.form.Pages[pageIdx].Elements = elements
 		srv.form.Pages[pageIdx].Description = webform.Pages[pageIdx].Description
 	}
