@@ -69,4 +69,6 @@ type Element struct {
 	// DataList should contain a set of values that represent the permissible
 	// or recommended options available to the element.
 	DataList []string
+	// Read only fields can't be edited.
+	ReadOnly bool
 }
