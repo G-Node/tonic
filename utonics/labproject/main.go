@@ -41,7 +41,7 @@ func main() {
 		Elements:    elems,
 	}
 	page2 := form.Page{
-		Description: "Extra repository submodules.  Each of the following elements creates an extra submodule which can be managed independently.  It has its own access permissions, public visibility, and can be published separatrely.  It is linked at the top level of the main repository.",
+		Description: "Extra repository submodules.  Each of the following elements creates an extra submodule which can be managed independently.  It has its own access permissions, public visibility, and can be published separately.  It is linked at the top level of the main repository.",
 		Elements: []form.Element{
 			{
 				ID:          "rawdata",
@@ -66,7 +66,7 @@ func main() {
 		Port:        3000,
 		DBPath:      "./labproject.db",
 	}
-	tsrv, err := tonic.NewService(form, nil, newProject, config)
+	tsrv, err := tonic.NewService(form, setForm, newProject, config)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -74,6 +74,20 @@ func main() {
 	tsrv.WaitForInterrupt()
 	tsrv.Stop()
 
+}
+
+func setForm(f form.Form, botClient, userClient *worker.Client) (*form.Form, error) {
+	orgs, err := getAvailableOrgs(botClient, userClient)
+	if err != nil {
+		return &f, err
+	}
+
+	if len(orgs) == 1 {
+		// Only one org is available so set it in the form
+		f.Pages[0].Elements[0].Value = orgs[0].UserName
+	}
+
+	return &f, nil
 }
 
 func newProject(values map[string]string, botClient, userClient *worker.Client) ([]string, error) {
