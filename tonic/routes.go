@@ -180,14 +180,15 @@ func (srv *Tonic) showJob(w http.ResponseWriter, r *http.Request, sess *db.Sessi
 
 	// Set up form and assign values to each matching element
 	data := make(map[string]interface{})
-	page := srv.form.Pages[0] // TODO: All pages
-	elements := page.Elements
-	for idx := range elements {
-		if val, ok := job.ValueMap[elements[idx].Name]; ok {
-			elements[idx].Value = val
-			// convert <select> elements to regular text <input> to show value
-			if elements[idx].Type == form.Select {
-				elements[idx].Type = form.TextInput
+	for _, page := range srv.form.Pages {
+		elements := page.Elements
+		for idx := range elements {
+			if val, ok := job.ValueMap[elements[idx].Name]; ok {
+				elements[idx].Value = val
+				// convert <select> elements to regular text <input> to show value
+				if elements[idx].Type == form.Select {
+					elements[idx].Type = form.TextInput
+				}
 			}
 		}
 	}
@@ -249,12 +250,13 @@ func (srv *Tonic) processForm(w http.ResponseWriter, r *http.Request, sess *db.S
 	}
 	postValues := r.PostForm
 	jobValues := make(map[string]string)
-	elements := srv.form.Pages[0].Elements // TODO: All pages
-	for idx := range elements {
-		key := elements[idx].Name
-		jobValues[key] = postValues.Get(key)
+	for _, page := range srv.form.Pages {
+		elements := page.Elements
+		for idx := range elements {
+			key := elements[idx].Name
+			jobValues[key] = postValues.Get(key)
+		}
 	}
-
 	client := worker.NewClient(srv.config.GINServer, sess.Token)
 	srv.worker.Enqueue(worker.NewUserJob(client, jobValues))
 
