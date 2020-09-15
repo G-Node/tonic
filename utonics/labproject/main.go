@@ -19,6 +19,7 @@ func main() {
 			ID:       "laborg",
 			Label:    "Lab organisation",
 			Name:     "organisation",
+			Type:     form.Select,
 			Required: true,
 		},
 		{

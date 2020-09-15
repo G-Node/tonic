@@ -20,6 +20,12 @@ const Form = `
 											<label for="{{$elem.ID}}">{{$elem.Label}}</label>
 											{{if eq $elem.Type "textarea"}}
 												<textarea id="{{$elem.ID}}" name="{{$elem.Name}}" {{if $elem.Required}}required{{end}} {{if or $elem.ReadOnly $.readonly}}readonly{{end}}>{{$elem.Value}}</textarea>
+											{{else if eq $elem.Type "select"}}
+												<select id="{{$elem.ID}}" name="{{$elem.Name}}">
+													{{range $value := $elem.ValueList}}
+														<option value="{{$value}}">{{$value}}</option>
+													{{end}}
+												</select>
 											{{else}}
 												<input type="{{$elem.Type}}" id="{{$elem.ID}}" name="{{$elem.Name}}" value="{{$elem.Value}}" autofocus {{if $elem.Required}}required{{end}} {{if or $elem.ReadOnly $.readonly}}readonly{{end}} {{if $elem.ValueList}}list="{{$elem.ID}}-values"{{end}}>
 												{{if $elem.ValueList}}
