@@ -12,7 +12,6 @@ const (
 	MonthInput    ElementType = "month"
 	NumberInput   ElementType = "number"
 	PasswordInput ElementType = "password"
-	RadioInput    ElementType = "radio"
 	RangeInput    ElementType = "range"
 	SearchInput   ElementType = "search"
 	TelInput      ElementType = "tel"
