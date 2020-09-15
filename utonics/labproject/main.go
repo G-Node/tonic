@@ -84,12 +84,12 @@ func setForm(f form.Form, botClient, userClient *worker.Client) (*form.Form, err
 		return &f, err
 	}
 
-	if len(orgs) == 1 {
-		// Only one org is available so set it in the form and set readonly
-		orgelem := &f.Pages[0].Elements[0]
-		orgelem.Value = orgs[0].UserName
-		orgelem.ReadOnly = true
-		orgelem.Description = fmt.Sprintf("%q is the only organisation with %q functionality enabled", orgelem.Value, f.Name)
+	orgelem := &f.Pages[0].Elements[0]
+	// Add available org names to ValueList for field
+	valueList := make([]string, len(orgs))
+	for idx, availOrg := range orgs {
+		valueList[idx] = availOrg.UserName
+		orgelem.ValueList = valueList
 	}
 
 	return &f, nil
