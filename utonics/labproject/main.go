@@ -33,6 +33,7 @@ func main() {
 			Label:       "Description",
 			Name:        "description",
 			Description: "Long project description",
+			Type:        form.TextArea,
 			Required:    false,
 		},
 	}

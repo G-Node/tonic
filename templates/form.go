@@ -18,7 +18,18 @@ const Form = `
 									{{range $elem := $page.Elements}}
 										<div class="inline {{if $elem.Required}}required{{end}} field ">
 											<label for="{{$elem.ID}}">{{$elem.Label}}</label>
-											<input type="{{$elem.Type}}" id="{{$elem.ID}}" name="{{$elem.Name}}" value="{{$elem.Value}}" autofocus {{if $elem.Required}}required{{end}} {{if or $elem.ReadOnly $.readonly}}readonly{{end}}>
+											{{if eq $elem.Type "textarea"}}
+												<textarea id="{{$elem.ID}}" name="{{$elem.Name}}" {{if $elem.Required}}required{{end}} {{if or $elem.ReadOnly $.readonly}}readonly{{end}}>{{$elem.Value}}</textarea>
+											{{else}}
+												<input type="{{$elem.Type}}" id="{{$elem.ID}}" name="{{$elem.Name}}" value="{{$elem.Value}}" autofocus {{if $elem.Required}}required{{end}} {{if or $elem.ReadOnly $.readonly}}readonly{{end}} {{if $elem.ValueList}}list="{{$elem.ID}}-values"{{end}}>
+												{{if $elem.ValueList}}
+												<datalist id="{{$elem.ID}}-values">
+													{{range $value := $elem.ValueList}}
+													<option value="{{$value}}">
+													{{end}}
+												</datalist>
+												{{end}}
+											{{end}}
 											<span class="help">{{$elem.Description}}</span>
 										</div>
 									{{end}}

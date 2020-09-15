@@ -20,6 +20,8 @@ const (
 	TimeInput     ElementType = "time"
 	URLInput      ElementType = "url"
 	WeekInput     ElementType = "week"
+	TextArea      ElementType = "textarea"
+	Select        ElementType = "select"
 )
 
 // ElementType defines the type of a form input element:
@@ -66,9 +68,11 @@ type Element struct {
 	Description string
 	// Type is the HTML input element type.
 	Type ElementType
-	// DataList should contain a set of values that represent the permissible
-	// or recommended options available to the element.
-	DataList []string
+	// ValueList should contain a set of values that represent the permissible
+	// or recommended options available to the element.  For input type
+	// elements, it represents suggested values (datalist).  For select
+	// elements, it represents the values in the list.
+	ValueList []string
 	// Read only fields can't be edited.
 	ReadOnly bool
 }
