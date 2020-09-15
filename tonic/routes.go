@@ -8,6 +8,7 @@ import (
 
 	"github.com/G-Node/tonic/templates"
 	"github.com/G-Node/tonic/tonic/db"
+	"github.com/G-Node/tonic/tonic/form"
 	"github.com/G-Node/tonic/tonic/worker"
 	"github.com/gogs/go-gogs-client"
 	"github.com/gorilla/mux"
@@ -184,6 +185,10 @@ func (srv *Tonic) showJob(w http.ResponseWriter, r *http.Request, sess *db.Sessi
 	for idx := range elements {
 		if val, ok := job.ValueMap[elements[idx].Name]; ok {
 			elements[idx].Value = val
+			// convert <select> elements to regular text <input> to show value
+			if elements[idx].Type == form.Select {
+				elements[idx].Type = form.TextInput
+			}
 		}
 	}
 
