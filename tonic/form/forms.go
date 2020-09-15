@@ -1,5 +1,11 @@
 package form
 
+import (
+	"fmt"
+	"html/template"
+	"strings"
+)
+
 const (
 	CheckboxInput ElementType = "checkbox"
 	ColorInput    ElementType = "color"
@@ -8,10 +14,10 @@ const (
 	EmailInput    ElementType = "email"
 	FileInput     ElementType = "file"
 	HiddenInput   ElementType = "hidden"
-	ImageInput    ElementType = "image"
 	MonthInput    ElementType = "month"
 	NumberInput   ElementType = "number"
 	PasswordInput ElementType = "password"
+	RadioInput    ElementType = "radio"
 	RangeInput    ElementType = "range"
 	SearchInput   ElementType = "search"
 	TelInput      ElementType = "tel"
@@ -74,4 +80,63 @@ type Element struct {
 	ValueList []string
 	// Read only fields can't be edited.
 	ReadOnly bool
+}
+
+// HTML returns the HTML representation of this element.
+func (e *Element) HTML() template.HTML {
+	label := fmt.Sprintf("<label for=%q>%s</label>", e.ID, e.Label)
+	var field, required, readonly, disabled string
+	if e.Required {
+		required = "required"
+	}
+	if e.ReadOnly {
+		readonly = "readonly"
+		disabled = "disabled"
+	}
+	// Note that checkbox and radio use fieldset to group multiple elements so
+	// use a different layout and return early
+	switch e.Type {
+	case RadioInput:
+		fallthrough
+	case CheckboxInput:
+		lines := make([]string, 0, len(e.ValueList)*4+4)
+		lines = append(lines, "<fieldset>")
+		lines = append(lines, fmt.Sprintf("<legend>%s</legend>", e.Label))
+		for _, value := range e.ValueList {
+			lines = append(lines, "<div>")
+			field = fmt.Sprintf("<input type=%q id=%q name=%q value=%q %s %s>", e.Type, value, e.ID, value, required, disabled)
+			lines = append(lines, field)
+			lines = append(lines, fmt.Sprintf("<label for=%q>%s</label>", value, value))
+			lines = append(lines, "</div>")
+		}
+		lines = append(lines, "</fieldset")
+		description := fmt.Sprintf("<span class=\"help\">%s</span>", e.Description)
+		return template.HTML(strings.Join(lines, "\n") + description)
+	case TextArea:
+		field = fmt.Sprintf("<textarea id=%q name=%q %s %s>%s</textarea>", e.ID, e.Name, required, readonly, e.Value)
+	case Select:
+		lines := make([]string, 0, len(e.ValueList)+2)
+		lines = append(lines, fmt.Sprintf("<select id=%q name=%q>", e.ID, e.Name))
+		for _, value := range e.ValueList {
+			lines = append(lines, fmt.Sprintf("<option value=%q>%s</option>", value, value))
+		}
+		lines = append(lines, "</select>")
+		field = strings.Join(lines, "\n")
+	default:
+		lines := make([]string, 0, len(e.ValueList)+3)
+		var valueListID string
+		if len(e.ValueList) > 0 {
+			valueListID = fmt.Sprintf("%s-values", e.ID)
+		}
+		lines = append(lines, fmt.Sprintf("<input type=%q id=%q name=%q value=%q %s %s list=%q>", e.Type, e.ID, e.Name, e.Value, required, readonly, valueListID))
+
+		lines = append(lines, fmt.Sprintf("<datalist id=%q>", e.ID))
+		for _, value := range e.ValueList {
+			lines = append(lines, fmt.Sprintf("<option value=%q>", value))
+		}
+		lines = append(lines, "</datalist>")
+		field = strings.Join(lines, "\n")
+	}
+	description := fmt.Sprintf("<span class=\"help\">%s</span>", e.Description)
+	return template.HTML(label + field + description)
 }
