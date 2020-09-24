@@ -83,24 +83,30 @@ func (srv *Tonic) userLoginPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client := gogs.NewClient(srv.config.GINServer, "")
+	// If no GINServer is defined, set the token as the username + password and let them
+	// through with any password.
 	var userToken string
-	tokens, err := client.ListAccessTokens(username, password)
-	if err != nil {
-		srv.web.ErrorResponse(w, http.StatusUnauthorized, "authentication failed")
-		return
-	}
-
-	if len(tokens) == 0 {
-		appName := srv.form.Name
-		token, err := client.CreateAccessToken(username, password, gogs.CreateAccessTokenOption{Name: appName})
-		userToken = token.Sha1
+	if srv.config.GINServer != "" {
+		client := gogs.NewClient(srv.config.GINServer, "")
+		tokens, err := client.ListAccessTokens(username, password)
 		if err != nil {
 			srv.web.ErrorResponse(w, http.StatusUnauthorized, "authentication failed")
 			return
 		}
+
+		if len(tokens) == 0 {
+			appName := srv.form.Name
+			token, err := client.CreateAccessToken(username, password, gogs.CreateAccessTokenOption{Name: appName})
+			userToken = token.Sha1
+			if err != nil {
+				srv.web.ErrorResponse(w, http.StatusUnauthorized, "authentication failed")
+				return
+			}
+		} else {
+			userToken = tokens[0].Sha1
+		}
 	} else {
-		userToken = tokens[0].Sha1
+		userToken = username + password
 	}
 
 	sess := db.NewSession(userToken)

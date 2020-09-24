@@ -130,6 +130,9 @@ func (srv *Tonic) Start() error {
 			return err
 		}
 		srv.log.Print("Logged in and ready")
+	} else {
+		srv.log.Print("No server configured - skipping login and disabling login requirements")
+		srv.log.Print("WARNING: Authentication is open!")
 	}
 	return nil
 }
