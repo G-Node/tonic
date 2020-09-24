@@ -120,7 +120,7 @@ func (w *Worker) Enqueue(j *UserJob) {
 }
 
 func (w *Worker) PreprocessForm(f *form.Form, userClient *Client) (*form.Form, error) {
-	if f == nil {
+	if f == nil || w.PreAction == nil {
 		// nothing to do
 		return f, nil
 	}
