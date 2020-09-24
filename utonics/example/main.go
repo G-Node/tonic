@@ -31,7 +31,7 @@ func main() {
 		Description: "Page 1 of example form",
 		Elements:    elems,
 	}
-	form := form.Form{
+	exampleForm := form.Form{
 		Pages:       []form.Page{page},
 		Name:        "Tonic example form",
 		Description: "",
@@ -44,7 +44,7 @@ func main() {
 		Port:        3000,
 		DBPath:      "./example.db",
 	}
-	ut, err := tonic.NewService(form, nil, exampleFunc, config)
+	ut, err := tonic.NewService(exampleForm, nil, exampleFunc, config)
 	if err != nil {
 		log.Fatal(err)
 	}
