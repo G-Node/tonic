@@ -53,7 +53,38 @@ func noopAction(values map[string]string, _, _ *worker.Client) ([]string, error)
 	return nil, nil
 }
 
-func TestTonicWithAction(t *testing.T) {
+func TestTonicWithPreAction(t *testing.T) {
+	f := new(form.Form)
+	f.Pages = []form.Page{{Elements: make([]form.Element, 1)}}
+	srv, err := NewService(*f, addElementAction, nil, Config{})
+	if err != nil {
+		t.Fatalf("Failed to initialise tonic service: %s", err.Error())
+	}
+	if err := srv.Start(); err != nil {
+		t.Fatalf("Failed to start tonic service: %s", err.Error())
+	}
+
+	j := worker.NewUserJob(worker.NewClient("", ""), map[string]string{"α": "alpha", "ω": "omega"})
+	srv.worker.Enqueue(j)
+
+	for !j.IsFinished() { // wait for job to finish
+		time.Sleep(time.Millisecond)
+	}
+
+	if len(j.Messages) > 0 {
+		t.Fatalf("Unexpected job output messages: %+v", j.Messages)
+	}
+
+	srv.Stop()
+}
+
+func addElementAction(f form.Form, _, _ *worker.Client) (*form.Form, error) {
+	fnew := new(form.Form)
+	fnew.Pages = []form.Page{{Elements: []form.Element{{Name: "Test", ID: "test", Description: "A test", Label: "Test"}}}}
+	return fnew, nil
+}
+
+func TestTonicWithPostAction(t *testing.T) {
 	f := new(form.Form)
 	f.Pages = []form.Page{{Elements: make([]form.Element, 1)}}
 	srv, err := NewService(*f, nil, echoAction, Config{})
@@ -89,6 +120,34 @@ func echoAction(values map[string]string, _, _ *worker.Client) ([]string, error)
 
 	sort.Strings(echo)
 	return echo, nil
+}
+
+func TestTonicWithActions(t *testing.T) {
+	f := new(form.Form)
+	f.Pages = []form.Page{{Elements: make([]form.Element, 1)}}
+	srv, err := NewService(*f, addElementAction, echoAction, Config{})
+	if err != nil {
+		t.Fatalf("Failed to initialise tonic service: %s", err.Error())
+	}
+	if err := srv.Start(); err != nil {
+		t.Fatalf("Failed to start tonic service: %s", err.Error())
+	}
+
+	j := worker.NewUserJob(worker.NewClient("", ""), map[string]string{"α": "alpha", "ω": "omega"})
+	srv.worker.Enqueue(j)
+
+	for !j.IsFinished() { // wait for job to finish
+		time.Sleep(time.Millisecond)
+	}
+
+	if j.Messages[0] != "α:alpha" {
+		t.Fatalf("Unexpected job output message [0]: %q", j.Messages[0])
+	}
+	if j.Messages[1] != "ω:omega" {
+		t.Fatalf("Unexpected job output message [1]: %s", j.Messages[1])
+	}
+
+	srv.Stop()
 }
 
 type LogBuffer struct {
