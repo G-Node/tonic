@@ -142,9 +142,15 @@ func (w *Worker) run(j *UserJob) {
 	j.Lock()
 	defer j.Unlock()
 	defer w.db.UpdateJob(j.Job) // Update job entry in db when done
-	msgs, err := w.PostAction(j.ValueMap, w.client, j.client)
-	j.EndTime = time.Now()
+	var msgs []string
+	var err error
+	if w.PostAction != nil {
+		msgs, err = w.PostAction(j.ValueMap, w.client, j.client)
+	} else {
+		j.Messages = []string{}
+	}
 	j.Messages = msgs
+	j.EndTime = time.Now()
 	if err == nil {
 		w.log.Printf("Job [J%d] %s finished", j.ID, j.Label)
 	} else {
