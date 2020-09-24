@@ -5,3 +5,8 @@
 
 
 Tonic is a framework for building services that interact with the [GIN](https://gin.g-node.org) API.
+
+## Building examples
+
+The project currently includes two built-in services as examples.
+See the [relevant docs](./docs/README.md) for a description of each one and instructions on how to build and use them.
