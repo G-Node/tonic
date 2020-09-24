@@ -119,6 +119,7 @@ func (w *Worker) Enqueue(j *UserJob) {
 	w.queue <- j
 }
 
+// PreprocessForm runs the defined PreAction and returns a modified Form.
 func (w *Worker) PreprocessForm(f *form.Form, userClient *Client) (*form.Form, error) {
 	if f == nil || w.PreAction == nil {
 		// nothing to do

@@ -113,7 +113,7 @@ func (srv *Tonic) Start() error {
 		return fmt.Errorf("No form specified: nil or empty form is invalid")
 	}
 	if srv.worker.PostAction == nil && srv.worker.PreAction == nil {
-		return fmt.Errorf("No action specified: Either Pre or Post action should be set.")
+		return fmt.Errorf("No action specified: Either Pre or Post action should be set")
 	}
 
 	srv.log.Print("Starting worker")

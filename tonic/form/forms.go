@@ -7,26 +7,46 @@ import (
 )
 
 const (
+	// CheckboxInput is a fieldset that groups a number of "checkbox" inputs for the same variable.
 	CheckboxInput ElementType = "checkbox"
-	ColorInput    ElementType = "color"
-	DateInput     ElementType = "date"
+	// ColorInput is an input element with type "color".
+	ColorInput ElementType = "color"
+	// DateInput is an input element with type "date"."
+	DateInput ElementType = "date"
+	// DateTimeInput is an input element with type "datetime-local".
 	DateTimeInput ElementType = "datetime-local"
-	EmailInput    ElementType = "email"
-	FileInput     ElementType = "file"
-	HiddenInput   ElementType = "hidden"
-	MonthInput    ElementType = "month"
-	NumberInput   ElementType = "number"
+	// EmailInput is an input element with type "email".
+	EmailInput ElementType = "email"
+	// FileInput is an input element with type "file".
+	FileInput ElementType = "file"
+	// HiddenInput is an input element with type "hidden".
+	HiddenInput ElementType = "hidden"
+	// MonthInput is an input element with type "month".
+	MonthInput ElementType = "month"
+	// NumberInput is an input element with type "number".
+	NumberInput ElementType = "number"
+	// PasswordInput is an input element with type "password".
 	PasswordInput ElementType = "password"
-	RadioInput    ElementType = "radio"
-	RangeInput    ElementType = "range"
-	SearchInput   ElementType = "search"
-	TelInput      ElementType = "tel"
-	TextInput     ElementType = "text"
-	TimeInput     ElementType = "time"
-	URLInput      ElementType = "url"
-	WeekInput     ElementType = "week"
-	TextArea      ElementType = "textarea"
-	Select        ElementType = "select"
+	// RadioInput is a fieldset that groups a number of "radio" inputs for the same variable.
+	RadioInput ElementType = "radio"
+	// RangeInput is an input element with type "range".
+	RangeInput ElementType = "range"
+	// SearchInput is an input element with type "search".
+	SearchInput ElementType = "search"
+	// TelInput is an input element with type "tel".
+	TelInput ElementType = "tel"
+	// TextInput is an input element with type "text".
+	TextInput ElementType = "text"
+	// TimeInput is an input element with type "time".
+	TimeInput ElementType = "time"
+	// URLInput is an input element with type "url".
+	URLInput ElementType = "url"
+	// WeekInput is an input element with type "week".
+	WeekInput ElementType = "week"
+	// TextArea is an "textarea" element.
+	TextArea ElementType = "textarea"
+	// Select is an input element with type "select".  Requires a ValueList.
+	Select ElementType = "select"
 )
 
 // ElementType defines the type of a form input element:
