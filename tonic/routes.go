@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/G-Node/tonic/templates"
@@ -194,9 +195,7 @@ func (srv *Tonic) showJob(w http.ResponseWriter, r *http.Request, sess *db.Sessi
 		elements := page.Elements
 		for idx := range elements {
 			if val, ok := job.ValueMap[elements[idx].Name]; ok {
-				if len(val) > 0 {
-					elements[idx].Value = val[0]
-				}
+				elements[idx].Value = strings.Join(val, "\n")
 				// convert <select> elements to regular text <input> to show value
 				if elements[idx].Type == form.Select {
 					elements[idx].Type = form.TextInput

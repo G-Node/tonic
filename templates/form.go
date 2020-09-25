@@ -16,8 +16,8 @@ const Form = `
 								{{range $page := .form.Pages}}
 									 <p>{{$page.Description}}</p> 
 									{{range $elem := $page.Elements}}
-										<div class="inline {{if $elem.Required}}required{{end}} field ">
-											{{$elem.HTML}}
+										<div class="inline {{if $elem.Required}}required{{end}} field">
+											{{$elem.HTML $.readonly}}
 										</div>
 									{{end}}
 									<div class="ui divider"></div>

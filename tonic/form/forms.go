@@ -103,16 +103,17 @@ type Element struct {
 }
 
 // HTML returns the HTML representation of this element.
-func (e *Element) HTML() template.HTML {
+func (e *Element) HTML(ro bool) template.HTML {
 	label := fmt.Sprintf("<label for=%q>%s</label>", e.ID, e.Label)
 	var field, required, readonly, disabled string
 	if e.Required {
 		required = "required"
 	}
-	if e.ReadOnly {
+	if e.ReadOnly || ro {
 		readonly = "readonly"
 		disabled = "disabled"
 	}
+
 	// Note that checkbox and radio use fieldset to group multiple elements so
 	// use a different layout and return early
 	switch e.Type {
@@ -120,11 +121,15 @@ func (e *Element) HTML() template.HTML {
 		fallthrough
 	case CheckboxInput:
 		lines := make([]string, 0, len(e.ValueList)*4+4)
-		lines = append(lines, "<fieldset>")
+		lines = append(lines, fmt.Sprintf("<fieldset %s>", disabled))
 		lines = append(lines, fmt.Sprintf("<legend>%s</legend>", e.Label))
 		for _, value := range e.ValueList {
+			checked := ""
+			if sliceContains(strings.Split(e.Value, "\n"), value) {
+				checked = "checked"
+			}
 			lines = append(lines, "<div>")
-			field = fmt.Sprintf("<input type=%q id=%q name=%q value=%q %s %s>", e.Type, value, e.ID, value, required, disabled)
+			field = fmt.Sprintf("<input type=%q id=%q name=%q value=%q %s %s>", e.Type, value, e.ID, value, required, checked)
 			lines = append(lines, field)
 			lines = append(lines, fmt.Sprintf("<label for=%q>%s</label>", value, value))
 			lines = append(lines, "</div>")
@@ -159,4 +164,13 @@ func (e *Element) HTML() template.HTML {
 	}
 	description := fmt.Sprintf("<span class=\"help\">%s</span>", e.Description)
 	return template.HTML(label + field + description)
+}
+
+func sliceContains(strSlice []string, value string) bool {
+	for _, slv := range strSlice {
+		if slv == value {
+			return true
+		}
+	}
+	return false
 }
