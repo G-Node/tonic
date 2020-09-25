@@ -111,14 +111,19 @@ func setForm(f form.Form, botClient, userClient *worker.Client) (*form.Form, err
 }
 
 func newProject(values map[string][]string, botClient, userClient *worker.Client) ([]string, error) {
-	orgName := values["organisation"][0]
-	project := values["project"][0]
-	teamName := values["team"][0]
-	description := values["description"][0]
-
-	if teamName == "" {
-		// Team name not specified; use project name
-		teamName = project
+	orgName := values["organisation"][0] // required
+	project := values["project"][0]      // required
+	description := ""
+	teamName := ""
+	if len(values["description"]) > 0 {
+		description = values["description"][0]
+	}
+	if len(values["team"]) > 0 {
+		teamName = values["team"][0]
+		if teamName == "" {
+			// Team name not specified; use project name
+			teamName = project
+		}
 	}
 
 	msgs := make([]string, 0, 10)
