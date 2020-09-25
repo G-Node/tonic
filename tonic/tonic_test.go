@@ -49,7 +49,7 @@ func TestTonicWithForm(t *testing.T) {
 	srv.Stop()
 }
 
-func noopAction(values map[string]string, _, _ *worker.Client) ([]string, error) {
+func noopAction(values map[string][]string, _, _ *worker.Client) ([]string, error) {
 	return nil, nil
 }
 
@@ -64,7 +64,7 @@ func TestTonicWithPreAction(t *testing.T) {
 		t.Fatalf("Failed to start tonic service: %s", err.Error())
 	}
 
-	j := worker.NewUserJob(worker.NewClient("", ""), map[string]string{"α": "alpha", "ω": "omega"})
+	j := worker.NewUserJob(worker.NewClient("", ""), "testjob", map[string][]string{"α": {"alpha"}, "ω": {"omega"}})
 	srv.worker.Enqueue(j)
 
 	for !j.IsFinished() { // wait for job to finish
@@ -95,7 +95,7 @@ func TestTonicWithPostAction(t *testing.T) {
 		t.Fatalf("Failed to start tonic service: %s", err.Error())
 	}
 
-	j := worker.NewUserJob(worker.NewClient("", ""), map[string]string{"α": "alpha", "ω": "omega"})
+	j := worker.NewUserJob(worker.NewClient("", ""), "testjob", map[string][]string{"α": {"alpha"}, "ω": {"omega"}})
 	srv.worker.Enqueue(j)
 
 	for !j.IsFinished() { // wait for job to finish
@@ -112,10 +112,10 @@ func TestTonicWithPostAction(t *testing.T) {
 	srv.Stop()
 }
 
-func echoAction(values map[string]string, _, _ *worker.Client) ([]string, error) {
+func echoAction(values map[string][]string, _, _ *worker.Client) ([]string, error) {
 	echo := make([]string, 0, len(values))
 	for k, v := range values {
-		echo = append(echo, fmt.Sprintf("%s:%s", k, v))
+		echo = append(echo, fmt.Sprintf("%s:%s", k, strings.Join(v, ", ")))
 	}
 
 	sort.Strings(echo)
@@ -133,14 +133,14 @@ func TestTonicWithActions(t *testing.T) {
 		t.Fatalf("Failed to start tonic service: %s", err.Error())
 	}
 
-	j := worker.NewUserJob(worker.NewClient("", ""), map[string]string{"α": "alpha", "ω": "omega"})
+	j := worker.NewUserJob(worker.NewClient("", ""), "testtonicwithactions", map[string][]string{"α": {"alpha", "a"}, "ω": {"omega"}})
 	srv.worker.Enqueue(j)
 
 	for !j.IsFinished() { // wait for job to finish
 		time.Sleep(time.Millisecond)
 	}
 
-	if j.Messages[0] != "α:alpha" {
+	if j.Messages[0] != "α:alpha, a" {
 		t.Fatalf("Unexpected job output message [0]: %q", j.Messages[0])
 	}
 	if j.Messages[1] != "ω:omega" {

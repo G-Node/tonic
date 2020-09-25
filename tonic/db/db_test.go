@@ -144,11 +144,11 @@ func TestJobStore(t *testing.T) {
 
 	job := new(Job)
 	job.Label = "test"
-	job.ValueMap = map[string]string{
-		"key1":       "value1",
-		"key2":       "value2",
-		"anotherkey": "anothervalue",
-		"onemore":    "lastvalue",
+	job.ValueMap = map[string][]string{
+		"key1":       {"value1"},
+		"key2":       {"value2"},
+		"anotherkey": {"anothervalue"},
+		"multivalue": {"lastvalue1", "lastvalue2", "lastvalue3"},
 	}
 	if db.InsertJob(job) != nil {
 		t.Fatalf("Failed inserting new job: %s", err.Error())
@@ -179,8 +179,10 @@ func TestJobStore(t *testing.T) {
 		t.Fatalf("Job ValueMap mismatch: %+v (not %+v)", j, job)
 	} else {
 		for k := range job.ValueMap {
-			if j.ValueMap[k] != job.ValueMap[k] {
-				t.Fatalf("Job ValueMap value mismatch: %s (not %s)", j.ValueMap[k], job.ValueMap[k])
+			for idx := range j.ValueMap[k] {
+				if j.ValueMap[k][idx] != job.ValueMap[k][idx] {
+					t.Fatalf("Job ValueMap value mismatch: %s (not %s)", j.ValueMap[k][idx], job.ValueMap[k][idx])
+				}
 			}
 		}
 	}
