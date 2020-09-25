@@ -108,11 +108,11 @@ func setForm(f form.Form, botClient, userClient *worker.Client) (*form.Form, err
 	return &f, nil
 }
 
-func newProject(values map[string]string, botClient, userClient *worker.Client) ([]string, error) {
-	orgName := values["organisation"]
-	project := values["project"]
-	teamName := values["team"]
-	description := values["description"]
+func newProject(values map[string][]string, botClient, userClient *worker.Client) ([]string, error) {
+	orgName := values["organisation"][0]
+	project := values["project"][0]
+	teamName := values["team"][0]
+	description := values["description"][0]
 
 	if teamName == "" {
 		// Team name not specified; use project name

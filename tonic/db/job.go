@@ -21,7 +21,7 @@ type Job struct {
 	// Error message (if the job failed).
 	Error string
 	// Form values that created the job
-	ValueMap map[string]string
+	ValueMap map[string][]string
 	// Time when the job was submitted to the queue
 	SubmitTime time.Time
 	// Time when the job finished (0 if ongoing)

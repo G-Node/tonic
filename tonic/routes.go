@@ -1,7 +1,11 @@
 package tonic
 
 import (
+	"crypto/sha1"
+	"encoding/hex"
+	"fmt"
 	"html/template"
+	"io"
 	"net/http"
 	"strconv"
 	"time"
@@ -190,11 +194,14 @@ func (srv *Tonic) showJob(w http.ResponseWriter, r *http.Request, sess *db.Sessi
 		elements := page.Elements
 		for idx := range elements {
 			if val, ok := job.ValueMap[elements[idx].Name]; ok {
-				elements[idx].Value = val
+				if len(val) > 0 {
+					elements[idx].Value = val[0]
+				}
 				// convert <select> elements to regular text <input> to show value
 				if elements[idx].Type == form.Select {
 					elements[idx].Type = form.TextInput
 				}
+				// TODO: Handle checkboxes and radio buttons
 			}
 		}
 	}
@@ -255,17 +262,32 @@ func (srv *Tonic) processForm(w http.ResponseWriter, r *http.Request, sess *db.S
 		srv.log.Printf("Failed to parse form: %v", err)
 	}
 	postValues := r.PostForm
-	jobValues := make(map[string]string)
+	jobValues := make(map[string][]string)
 	for _, page := range srv.form.Pages {
 		elements := page.Elements
 		for idx := range elements {
 			key := elements[idx].Name
-			jobValues[key] = postValues.Get(key)
+			jobValues[key] = postValues[key]
 		}
 	}
 	client := worker.NewClient(srv.config.GINServer, sess.Token)
-	srv.worker.Enqueue(worker.NewUserJob(client, jobValues))
+	label := fmt.Sprintf("%s: %s", srv.form.Name, hashValues(jobValues)[:6])
+	srv.worker.Enqueue(worker.NewUserJob(client, label, jobValues))
 
 	// redirect to job log
 	http.Redirect(w, r, "/log", http.StatusSeeOther)
+}
+
+// hashValues returns a sha1 hash of a ValueMap that can be used to uniquely
+// label jobs.  This shouldn't be used as the JobID, since we already use
+// auto-incremental DB keys for that.
+func hashValues(values map[string][]string) string {
+	h := sha1.New()
+	for _, valueSlice := range values {
+		for _, value := range valueSlice {
+			io.WriteString(h, value)
+		}
+	}
+	hash := h.Sum(nil)
+	return hex.EncodeToString(hash[:])
 }

@@ -20,7 +20,7 @@ type PreAction func(f form.Form, botClient, userClient *Client) (*form.Form, err
 // PostAction is a function that receives the form values when the form is
 // submitted.  It should perform actions for the user through the service given
 // the form values and return a list of messages and/or an error if it fails.
-type PostAction func(v map[string]string, botClient, userClient *Client) ([]string, error)
+type PostAction func(v map[string][]string, botClient, userClient *Client) ([]string, error)
 
 // Client embeds gogs.Client to extend functionality with new convenience
 // methods.  (New clients may be added in the future using the same interface).
@@ -43,14 +43,15 @@ type UserJob struct {
 
 // NewUserJob returns a new UserJob initialised with the given custom function
 // and user values.
-func NewUserJob(client *Client, values map[string]string) *UserJob {
+func NewUserJob(client *Client, label string, values map[string][]string) *UserJob {
 	j := new(UserJob)
 	j.Job = new(db.Job)
 	j.client = client
 	user, _ := client.GetSelfInfo() // TODO: Handle error
+	j.Label = label
 	j.UserID = user.ID
 	// copy values to avoid mutating ValueMap after it's assigned.
-	j.ValueMap = make(map[string]string, len(values))
+	j.ValueMap = make(map[string][]string, len(values))
 	for k, v := range values {
 		j.ValueMap[k] = v
 	}
@@ -105,12 +106,6 @@ func (w *Worker) Enqueue(j *UserJob) {
 	j.Lock()
 	w.log.Printf("J: %+v", j)
 	j.SubmitTime = time.Now()
-	// TODO: Find a good way to label jobs otherwise just use IDs in listings
-	var label string
-	for _, label = range j.ValueMap {
-		break
-	}
-	j.Label = label
 	j.Unlock()
 	err := w.db.InsertJob(j.Job)
 	if err != nil {

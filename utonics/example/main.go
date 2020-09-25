@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/G-Node/tonic/tonic"
@@ -78,19 +79,19 @@ func main() {
 	ut.WaitForInterrupt()
 }
 
-func exampleFunc(values map[string]string, _, _ *worker.Client) ([]string, error) {
+func exampleFunc(values map[string][]string, _, _ *worker.Client) ([]string, error) {
 	fail := false
 	msgs := make([]string, 0)
 	for k, v := range values {
-		msg := fmt.Sprintf("Example function got %s: %q\n", k, v)
+		msg := fmt.Sprintf("Example function got %s: %q\n", k, strings.Join(v, ", "))
 		msgs = append(msgs, msg)
-		if v == "error" {
+		if len(v) > 0 && v[0] == "error" {
 			msgs = append(msgs, "Found 'error' value. Stopping.")
 			fail = true
 		}
 	}
 
-	duration := values["duration"]
+	duration := values["duration"][0]
 	if duration != "" {
 		d, err := strconv.Atoi(duration)
 		if err != nil {
