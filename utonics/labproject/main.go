@@ -52,14 +52,16 @@ func main() {
 		Elements:    elems,
 	}
 	page2 := form.Page{
-		Description: "Extra repository submodules.  Each of the following elements creates an extra submodule which can be managed independently.  It has its own access permissions, public visibility, and can be published separately.  It is linked at the top level of the main repository.",
+		Description: "Extra repository submodules.  Each of the following elements creates an extra submodule which can be managed independently.  It has its own access permissions, public visibility, and can be published separately.  It appears as a subdirectory at the top level of the main repository.",
 		Elements: []form.Element{
 			{
-				ID:          "rawdata",
-				Label:       "Raw data submodule",
-				Name:        "rawdata",
-				Description: "Add a raw data submodule",
+				ID:          "submodules",
+				Label:       "Submodules",
+				Name:        "submodules",
+				Description: "",
 				Required:    false,
+				Type:        form.CheckboxInput,
+				ValueList:   []string{"Raw", "Public", "Figures"},
 			},
 		},
 	}
