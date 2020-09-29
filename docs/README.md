@@ -53,7 +53,7 @@ The PostAction function takes three arguments:
 
 The PostAction should use the bot client to perform actions for the using the bot client and return a list of messages.  The messages should serve as an action log for users to review or to troubleshoot any problems.  The following is a non-exhaustive list of examples of some actions that the PostAction could perform for a user:
 - Create a repository in an organisation in which the user is not an owner (see the [lab project](./labproject.md) microservice).
-- Invite another user to a team in an organisation in which the user it not an owner.
+- Invite another user to a team in an organisation in which the user is not an owner.
 - Rename or otherwise modify a repository of which they're not an admin.
 
 The purpose of services like these is to give users the ability to perform specific administrative-level actions without giving them full administrative rights.
