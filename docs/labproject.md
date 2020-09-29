@@ -5,7 +5,7 @@ It defines the following service components:
 
 ## Form
 
-The Form consists of a two pages.
+The Form consists of two pages.
 
 The first page consists of three elements:
 1. Lab organisation: The name of the organisation in which the repository is going to be created.
