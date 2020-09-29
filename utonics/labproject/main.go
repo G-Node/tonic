@@ -23,7 +23,7 @@ func main() {
 			Required: true,
 		},
 		{
-			ID:          "projnam",
+			ID:          "projname",
 			Label:       "Project name",
 			Name:        "project",
 			Description: "Must not already exist",
@@ -96,7 +96,7 @@ func setForm(f form.Form, botClient, userClient *worker.Client) (*form.Form, err
 }
 
 func newProject(values map[string]string, botClient, userClient *worker.Client) ([]string, error) {
-	organisation := values["organisation"]
+	orgName := values["organisation"]
 	project := values["project"]
 	description := values["description"]
 
@@ -110,15 +110,15 @@ func newProject(values map[string]string, botClient, userClient *worker.Client) 
 		return msgs, err
 	}
 	for _, validOrg := range validOrgs {
-		if validOrg.UserName == organisation {
+		if validOrg.UserName == orgName {
 			orgOK = true
 			break
 		}
 	}
 
 	if !orgOK {
-		msgs = append(msgs, fmt.Sprintf("Lab organisation %q is not a valid option. Either user is not a member, or the service is not enabled for that organisation.", organisation))
-		return msgs, fmt.Errorf("Invalid organisation %q: Cannot create new project", organisation)
+		msgs = append(msgs, fmt.Sprintf("Lab organisation %q is not a valid option. Either user is not a member, or the service is not enabled for that organisation.", orgName))
+		return msgs, fmt.Errorf("Invalid organisation %q: Cannot create new project", orgName)
 	}
 
 	projectOpt := gogs.CreateRepoOption{
@@ -128,8 +128,8 @@ func newProject(values map[string]string, botClient, userClient *worker.Client) 
 		AutoInit:    true,
 		Readme:      "Default",
 	}
-	msgs = append(msgs, fmt.Sprintf("Creating %s/%s", organisation, projectOpt.Name))
-	repo, err := botClient.CreateOrgRepo(organisation, projectOpt)
+	msgs = append(msgs, fmt.Sprintf("Creating %s/%s", orgName, projectOpt.Name))
+	repo, err := botClient.CreateOrgRepo(orgName, projectOpt)
 	if err != nil {
 		msgs = append(msgs, fmt.Sprintf("Failed to create repository: %v", err.Error()))
 		return msgs, err
@@ -137,8 +137,8 @@ func newProject(values map[string]string, botClient, userClient *worker.Client) 
 	msgs = append(msgs, fmt.Sprintf("Repository created: %s", repo.FullName))
 
 	// TODO: Use non admin command when it becomes available
-	msgs = append(msgs, fmt.Sprintf("Creating team %s/%s", organisation, project))
-	team, err := botClient.AdminCreateTeam(organisation, gogs.CreateTeamOption{Name: project, Description: description, Permission: "write"})
+	msgs = append(msgs, fmt.Sprintf("Creating team %s/%s", orgName, project))
+	team, err := botClient.AdminCreateTeam(orgName, gogs.CreateTeamOption{Name: project, Description: description, Permission: "write"})
 	if err != nil {
 		msgs = append(msgs, fmt.Sprintf("Failed to create team: %s", err.Error()))
 		return msgs, err
