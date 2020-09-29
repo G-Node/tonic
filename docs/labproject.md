@@ -9,8 +9,9 @@ The Form consists of two pages.
 
 The first page consists of three elements:
 1. Lab organisation: The name of the organisation in which the repository is going to be created.
-2. Project name: The name of the repository or repositories to be created.
-3. Description: A long description for the project.
+2. Optionally a team name where the repository will be added. If none is indicated, a team with the same name as the repository will be created.
+3. Project name: The name of the repository or repositories to be created.
+4. Description: A long description for the project.
 
 The second page includes toggles for submodules that the user may or may not require for the project.
 
