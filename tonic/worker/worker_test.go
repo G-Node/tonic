@@ -25,7 +25,7 @@ func TestWorkerEmptyJob(t *testing.T) {
 	defer conn.Close()
 
 	w := New(conn)
-	w.Action = testAction
+	w.PostAction = testAction
 	w.Start()
 	defer w.Stop()
 	j := new(UserJob)
@@ -55,7 +55,7 @@ func TestWorkerAction(t *testing.T) {
 	defer conn.Close()
 
 	w := New(conn)
-	w.Action = testAction
+	w.PostAction = testAction
 	w.Start()
 	defer w.Stop()
 	w.client = NewClient("https://example.org", "testadmintoken")
@@ -87,7 +87,7 @@ func TestWorkerJobFail(t *testing.T) {
 	defer conn.Close()
 
 	w := New(conn)
-	w.Action = testAction
+	w.PostAction = testAction
 	w.Start()
 	defer w.Stop()
 	w.client = NewClient("https://example.org", "testadmintoken")

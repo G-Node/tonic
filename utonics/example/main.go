@@ -7,11 +7,14 @@ import (
 	"time"
 
 	"github.com/G-Node/tonic/tonic"
+	"github.com/G-Node/tonic/tonic/form"
 	"github.com/G-Node/tonic/tonic/worker"
 )
 
+var allElementTypes = []form.ElementType{form.CheckboxInput, form.ColorInput, form.DateInput, form.DateTimeInput, form.EmailInput, form.FileInput, form.HiddenInput, form.MonthInput, form.NumberInput, form.PasswordInput, form.RadioInput, form.RangeInput, form.SearchInput, form.TelInput, form.TextInput, form.TimeInput, form.URLInput, form.WeekInput, form.TextArea, form.Select}
+
 func main() {
-	elems := []tonic.Element{
+	pageOneElems := []form.Element{
 		{
 			Name:  "name",
 			Label: "Name",
@@ -26,6 +29,38 @@ func main() {
 			Description: "Seconds to wait before finishing the job.  Use for simulating long-running jobs.",
 		},
 	}
+	examplePage := form.Page{
+		Description: "Page 1 of example form",
+		Elements:    pageOneElems,
+	}
+
+	demoElements := make([]form.Element, len(allElementTypes))
+	for idx := range allElementTypes {
+		elemType := allElementTypes[idx]
+		elem := form.Element{
+			ID:          fmt.Sprintf("id%s", elemType),
+			Name:        string(elemType),
+			Label:       fmt.Sprintf("Element type %s", elemType),
+			Description: fmt.Sprintf("An element of type %s", elemType),
+			ValueList: []string{ // will only have effect on the types where it's valid
+				fmt.Sprintf("%s option one", elemType),
+				fmt.Sprintf("%s option two", elemType),
+				fmt.Sprintf("%s option three", elemType),
+			},
+			Type: elemType,
+		}
+		demoElements[idx] = elem
+	}
+
+	elementDemoPage := form.Page{
+		Description: "One of each element supported by Tonic",
+		Elements:    demoElements,
+	}
+	exampleForm := form.Form{
+		Pages:       []form.Page{examplePage, elementDemoPage},
+		Name:        "Tonic example form",
+		Description: "",
+	}
 	config := tonic.Config{
 		GINServer:   "", // not used in example
 		GINUsername: "", // not used in example
@@ -34,7 +69,7 @@ func main() {
 		Port:        3000,
 		DBPath:      "./example.db",
 	}
-	ut, err := tonic.NewService(elems, exampleFunc, config)
+	ut, err := tonic.NewService(exampleForm, nil, exampleFunc, config)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -7,5 +7,6 @@ require (
 	github.com/google/uuid v1.1.1
 	github.com/gorilla/mux v1.7.4
 	github.com/mattn/go-sqlite3 v1.14.0
+	golang.org/x/net v0.0.0-20200324143707-d3edc9973b7e
 	xorm.io/xorm v1.0.3
 )

@@ -10,28 +10,19 @@ import (
 	"testing"
 	"time"
 
+	"github.com/G-Node/tonic/tonic/form"
 	"github.com/G-Node/tonic/tonic/worker"
 )
 
 func TestTonicFailStart(t *testing.T) {
-	if s, _ := NewService(nil, nil, Config{}); s.Start() == nil {
-		s.Stop()
-		t.Fatal("Service start succeeded; should have failed")
-	}
-
-	if s, _ := NewService(make([]Element, 0), nil, Config{}); s.Start() == nil {
-		s.Stop()
-		t.Fatal("Service start succeeded; should have failed")
-	}
-
-	if s, _ := NewService(make([]Element, 10), nil, Config{}); s.Start() == nil {
+	if s, _ := NewService(form.Form{}, nil, nil, Config{}); s.Start() == nil {
 		s.Stop()
 		t.Fatal("Service start succeeded; should have failed")
 	}
 }
 
 func TestTonicWithForm(t *testing.T) {
-	f := []Element{
+	elems := []form.Element{
 		{
 			ID:          "el1",
 			Name:        "testfield1",
@@ -45,7 +36,9 @@ func TestTonicWithForm(t *testing.T) {
 			Description: "Field of tests, part 2",
 		},
 	}
-	srv, err := NewService(f, noopAction, Config{})
+	f := new(form.Form)
+	f.Pages = []form.Page{{Elements: elems}}
+	srv, err := NewService(*f, nil, noopAction, Config{})
 	if err != nil {
 		t.Fatalf("Failed to initialise tonic service: %s", err.Error())
 	}
@@ -60,8 +53,41 @@ func noopAction(values map[string]string, _, _ *worker.Client) ([]string, error)
 	return nil, nil
 }
 
-func TestTonicWithAction(t *testing.T) {
-	srv, err := NewService(make([]Element, 1), echoAction, Config{})
+func TestTonicWithPreAction(t *testing.T) {
+	f := new(form.Form)
+	f.Pages = []form.Page{{Elements: make([]form.Element, 1)}}
+	srv, err := NewService(*f, addElementAction, nil, Config{})
+	if err != nil {
+		t.Fatalf("Failed to initialise tonic service: %s", err.Error())
+	}
+	if err := srv.Start(); err != nil {
+		t.Fatalf("Failed to start tonic service: %s", err.Error())
+	}
+
+	j := worker.NewUserJob(worker.NewClient("", ""), map[string]string{"α": "alpha", "ω": "omega"})
+	srv.worker.Enqueue(j)
+
+	for !j.IsFinished() { // wait for job to finish
+		time.Sleep(time.Millisecond)
+	}
+
+	if len(j.Messages) > 0 {
+		t.Fatalf("Unexpected job output messages: %+v", j.Messages)
+	}
+
+	srv.Stop()
+}
+
+func addElementAction(f form.Form, _, _ *worker.Client) (*form.Form, error) {
+	fnew := new(form.Form)
+	fnew.Pages = []form.Page{{Elements: []form.Element{{Name: "Test", ID: "test", Description: "A test", Label: "Test"}}}}
+	return fnew, nil
+}
+
+func TestTonicWithPostAction(t *testing.T) {
+	f := new(form.Form)
+	f.Pages = []form.Page{{Elements: make([]form.Element, 1)}}
+	srv, err := NewService(*f, nil, echoAction, Config{})
 	if err != nil {
 		t.Fatalf("Failed to initialise tonic service: %s", err.Error())
 	}
@@ -96,6 +122,34 @@ func echoAction(values map[string]string, _, _ *worker.Client) ([]string, error)
 	return echo, nil
 }
 
+func TestTonicWithActions(t *testing.T) {
+	f := new(form.Form)
+	f.Pages = []form.Page{{Elements: make([]form.Element, 1)}}
+	srv, err := NewService(*f, addElementAction, echoAction, Config{})
+	if err != nil {
+		t.Fatalf("Failed to initialise tonic service: %s", err.Error())
+	}
+	if err := srv.Start(); err != nil {
+		t.Fatalf("Failed to start tonic service: %s", err.Error())
+	}
+
+	j := worker.NewUserJob(worker.NewClient("", ""), map[string]string{"α": "alpha", "ω": "omega"})
+	srv.worker.Enqueue(j)
+
+	for !j.IsFinished() { // wait for job to finish
+		time.Sleep(time.Millisecond)
+	}
+
+	if j.Messages[0] != "α:alpha" {
+		t.Fatalf("Unexpected job output message [0]: %q", j.Messages[0])
+	}
+	if j.Messages[1] != "ω:omega" {
+		t.Fatalf("Unexpected job output message [1]: %s", j.Messages[1])
+	}
+
+	srv.Stop()
+}
+
 type LogBuffer struct {
 	b   bytes.Buffer
 	mux sync.Mutex
@@ -114,7 +168,9 @@ func (lb *LogBuffer) String() string {
 }
 
 func TestLoggers(t *testing.T) {
-	srv, err := NewService(make([]Element, 1), noopAction, Config{})
+	f := new(form.Form)
+	f.Pages = []form.Page{{Elements: make([]form.Element, 1)}}
+	srv, err := NewService(*f, nil, noopAction, Config{})
 	if err != nil {
 		t.Fatalf("Failed to initialise tonic service: %s", err.Error())
 	}

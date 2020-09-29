@@ -3,20 +3,23 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/G-Node/tonic/tonic"
-	"github.com/G-Node/tonic/tonic/worker"
-	"github.com/gogs/go-gogs-client"
 	"io/ioutil"
 	"log"
 	"os"
+
+	"github.com/G-Node/tonic/tonic"
+	"github.com/G-Node/tonic/tonic/form"
+	"github.com/G-Node/tonic/tonic/worker"
+	"github.com/gogs/go-gogs-client"
 )
 
 func main() {
-	form := []tonic.Element{
+	elems := []form.Element{
 		{
 			ID:       "laborg",
 			Label:    "Lab organisation",
 			Name:     "organisation",
+			Type:     form.Select,
 			Required: true,
 		},
 		{
@@ -31,8 +34,30 @@ func main() {
 			Label:       "Description",
 			Name:        "description",
 			Description: "Long project description",
+			Type:        form.TextArea,
 			Required:    false,
 		},
+	}
+	page1 := form.Page{
+		Description: "Creating a new project will create a new set of repositories based on the lab template and a team for granting access to all project members.",
+		Elements:    elems,
+	}
+	page2 := form.Page{
+		Description: "Extra repository submodules.  Each of the following elements creates an extra submodule which can be managed independently.  It has its own access permissions, public visibility, and can be published separately.  It is linked at the top level of the main repository.",
+		Elements: []form.Element{
+			{
+				ID:          "rawdata",
+				Label:       "Raw data submodule",
+				Name:        "rawdata",
+				Description: "Add a raw data submodule",
+				Required:    false,
+			},
+		},
+	}
+	form := form.Form{
+		Pages:       []form.Page{page1, page2},
+		Name:        "Project creation",
+		Description: "",
 	}
 	username, password := readPassfile("testbot")
 	config := tonic.Config{
@@ -43,7 +68,7 @@ func main() {
 		Port:        3000,
 		DBPath:      "./labproject.db",
 	}
-	tsrv, err := tonic.NewService(form, newProject, config)
+	tsrv, err := tonic.NewService(form, setForm, newProject, config)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -51,6 +76,23 @@ func main() {
 	tsrv.WaitForInterrupt()
 	tsrv.Stop()
 
+}
+
+func setForm(f form.Form, botClient, userClient *worker.Client) (*form.Form, error) {
+	orgs, err := getAvailableOrgs(botClient, userClient)
+	if err != nil {
+		return &f, err
+	}
+
+	orgelem := &f.Pages[0].Elements[0]
+	// Add available org names to ValueList for field
+	valueList := make([]string, len(orgs))
+	for idx, availOrg := range orgs {
+		valueList[idx] = availOrg.UserName
+		orgelem.ValueList = valueList
+	}
+
+	return &f, nil
 }
 
 func newProject(values map[string]string, botClient, userClient *worker.Client) ([]string, error) {
