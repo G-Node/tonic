@@ -28,6 +28,15 @@ func main() {
 			Name:        "project",
 			Description: "Must not already exist",
 			Required:    true,
+			Type:        form.TextInput,
+		},
+		{
+			ID:          "teamname",
+			Label:       "Team name",
+			Name:        "team",
+			Description: "Name of the team the project will belong to. If it does not exist it will be created. If left blank, a new team will be created with the same name as the project.",
+			Required:    false,
+			Type:        form.TextInput,
 		},
 		{
 			ID:          "description",
@@ -79,18 +88,22 @@ func main() {
 }
 
 func setForm(f form.Form, botClient, userClient *worker.Client) (*form.Form, error) {
-	orgs, err := getAvailableOrgs(botClient, userClient)
+	orgs, err := getAvailableOrgsAndTeams(botClient, userClient)
 	if err != nil {
 		return &f, err
 	}
 
 	orgelem := &f.Pages[0].Elements[0]
+	teamelem := &f.Pages[0].Elements[2]
 	// Add available org names to ValueList for field
-	valueList := make([]string, len(orgs))
-	for idx, availOrg := range orgs {
-		valueList[idx] = availOrg.UserName
-		orgelem.ValueList = valueList
+	orgList := make([]string, 0, len(orgs))
+	teamList := make([]string, 0)
+	for availOrg, availTeams := range orgs {
+		orgList = append(orgList, availOrg)
+		teamList = append(teamList, availTeams...)
 	}
+	orgelem.ValueList = orgList
+	teamelem.ValueList = teamList
 
 	return &f, nil
 }
@@ -98,19 +111,21 @@ func setForm(f form.Form, botClient, userClient *worker.Client) (*form.Form, err
 func newProject(values map[string]string, botClient, userClient *worker.Client) ([]string, error) {
 	orgName := values["organisation"]
 	project := values["project"]
+	teamName := values["team"]
 	description := values["description"]
 
 	msgs := make([]string, 0, 10)
 
 	// verify that the user is a member of the organisation
 	orgOK := false
-	validOrgs, err := getAvailableOrgs(botClient, userClient)
+	validOrgs, err := getAvailableOrgsAndTeams(botClient, userClient)
+	// if is an input element with type nil {.
 	if err != nil {
 		msgs = append(msgs, "Failed to get list of valid orgs")
 		return msgs, err
 	}
-	for _, validOrg := range validOrgs {
-		if validOrg.UserName == orgName {
+	for validOrg := range validOrgs {
+		if validOrg == orgName {
 			orgOK = true
 			break
 		}
@@ -128,6 +143,10 @@ func newProject(values map[string]string, botClient, userClient *worker.Client) 
 		AutoInit:    true,
 		Readme:      "Default",
 	}
+
+	// TODO: Fail if the team exists and the user is not a member
+
+	// Create Repository
 	msgs = append(msgs, fmt.Sprintf("Creating %s/%s", orgName, projectOpt.Name))
 	repo, err := botClient.CreateOrgRepo(orgName, projectOpt)
 	if err != nil {
@@ -136,27 +155,49 @@ func newProject(values map[string]string, botClient, userClient *worker.Client) 
 	}
 	msgs = append(msgs, fmt.Sprintf("Repository created: %s", repo.FullName))
 
-	// TODO: Use non admin command when it becomes available
-	msgs = append(msgs, fmt.Sprintf("Creating team %s/%s", orgName, project))
-	team, err := botClient.AdminCreateTeam(orgName, gogs.CreateTeamOption{Name: project, Description: description, Permission: "write"})
+	orgTeams, err := botClient.ListTeams(orgName)
 	if err != nil {
-		msgs = append(msgs, fmt.Sprintf("Failed to create team: %s", err.Error()))
-		return msgs, err
-	}
-	msgs = append(msgs, fmt.Sprintf("Team created: %s", team.Name))
-
-	user, err := userClient.GetSelfInfo()
-	if err != nil {
-		msgs = append(msgs, fmt.Sprintf("Failed to retrieve user info: %s", err.Error()))
-		return msgs, err
-	}
-	msgs = append(msgs, fmt.Sprintf("Adding user %q to team %q", user.Login, team.Name))
-	botClient.AdminAddTeamMembership(team.ID, user.Login)
-	if err != nil {
-		msgs = append(msgs, fmt.Sprintf("Failed to add user: %s", err.Error()))
+		msgs = append(msgs, fmt.Sprintf("Failed to list teams for org: %s", orgName))
 		return msgs, err
 	}
 
+	// Check if Team exists
+	var team *gogs.Team
+	for _, orgTeam := range orgTeams {
+		if orgTeam.Name == teamName {
+			team = orgTeam
+			msgs = append(msgs, fmt.Sprintf("Team %s exists. Skipping team creation.", teamName))
+			break
+		}
+	}
+
+	if team == nil {
+		// Create Team
+		// TODO: Use non admin command when it becomes available
+		msgs = append(msgs, fmt.Sprintf("Creating team %s/%s", orgName, project))
+		team, err = botClient.AdminCreateTeam(orgName, gogs.CreateTeamOption{Name: project, Description: description, Permission: "write"})
+		if err != nil {
+			msgs = append(msgs, fmt.Sprintf("Failed to create team: %s", err.Error()))
+			return msgs, err
+		}
+		msgs = append(msgs, fmt.Sprintf("Team created: %s", team.Name))
+
+		user, err := userClient.GetSelfInfo()
+		if err != nil {
+			msgs = append(msgs, fmt.Sprintf("Failed to retrieve user info: %s", err.Error()))
+			return msgs, err
+		}
+
+		// Add User to Team
+		msgs = append(msgs, fmt.Sprintf("Adding user %q to team %q", user.Login, team.Name))
+		botClient.AdminAddTeamMembership(team.ID, user.Login)
+		if err != nil {
+			msgs = append(msgs, fmt.Sprintf("Failed to add user: %s", err.Error()))
+			return msgs, err
+		}
+	}
+
+	// Add Repository to Team
 	msgs = append(msgs, fmt.Sprintf("Adding repository %q to team %q", project, team.Name))
 	botClient.AdminAddTeamRepository(team.ID, project)
 	if err != nil {
@@ -167,7 +208,10 @@ func newProject(values map[string]string, botClient, userClient *worker.Client) 
 	return msgs, nil
 }
 
-func getAvailableOrgs(botClient, userClient *worker.Client) ([]gogs.Organization, error) {
+// getAvailableOrgsAndTeams returns a map of organisation names that the user
+// and bot both belong to, each mapped to a list of organisation teams that the
+// user belongs to.
+func getAvailableOrgsAndTeams(botClient, userClient *worker.Client) (map[string][]string, error) {
 	// An org is available for management on the service if the user is a
 	// member and the bot is an owner or admin.
 	botOrgs, err := botClient.ListMyOrgs()
@@ -194,14 +238,26 @@ func getAvailableOrgs(botClient, userClient *worker.Client) ([]gogs.Organization
 		return nil, err
 	}
 
+	validOrgTeams := make(map[string][]string)
 	validOrgs := make([]gogs.Organization, 0, len(userOrgs))
 	for _, userOrg := range userOrgs {
 		if _, ok := adminOrgs[userOrg.ID]; ok {
 			validOrgs = append(validOrgs, *userOrg)
+			validOrgTeams[userOrg.UserName] = nil
+			orgTeams, err := userClient.ListTeams(userOrg.UserName)
+			if err != nil {
+				// couldn't get teams; assume user has none in this org
+				continue
+			}
+			teams := make([]string, 0, len(orgTeams))
+			for _, team := range orgTeams {
+				teams = append(teams, team.Name)
+			}
+			validOrgTeams[userOrg.UserName] = teams
 		}
 	}
 
-	return validOrgs, nil
+	return validOrgTeams, nil
 }
 
 func readPassfile(filename string) (string, string) {
