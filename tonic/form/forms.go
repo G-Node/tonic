@@ -150,7 +150,7 @@ func (e *Element) HTML() template.HTML {
 		}
 		lines = append(lines, fmt.Sprintf("<input type=%q id=%q name=%q value=%q %s %s list=%q>", e.Type, e.ID, e.Name, e.Value, required, readonly, valueListID))
 
-		lines = append(lines, fmt.Sprintf("<datalist id=%q>", e.ID))
+		lines = append(lines, fmt.Sprintf("<datalist id=%q>", valueListID))
 		for _, value := range e.ValueList {
 			lines = append(lines, fmt.Sprintf("<option value=%q>", value))
 		}
