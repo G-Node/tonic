@@ -114,6 +114,11 @@ func newProject(values map[string]string, botClient, userClient *worker.Client) 
 	teamName := values["team"]
 	description := values["description"]
 
+	if teamName == "" {
+		// Team name not specified; use project name
+		teamName = project
+	}
+
 	msgs := make([]string, 0, 10)
 
 	// verify that the user is a member of the organisation
