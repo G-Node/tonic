@@ -120,10 +120,10 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 	}
 	if len(values["team"]) > 0 {
 		teamName = values["team"][0]
-		if teamName == "" {
-			// Team name not specified; use project name
-			teamName = project
-		}
+	}
+	if teamName == "" {
+		// Team name not specified; use project name
+		teamName = project
 	}
 
 	msgs := make([]string, 0, 10)
@@ -187,7 +187,7 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 		// Create Team
 		// TODO: Use non admin command when it becomes available
 		msgs = append(msgs, fmt.Sprintf("Creating team %s/%s", orgName, project))
-		team, err = botClient.AdminCreateTeam(orgName, gogs.CreateTeamOption{Name: project, Description: description, Permission: "write"})
+		team, err = botClient.AdminCreateTeam(orgName, gogs.CreateTeamOption{Name: teamName, Description: description, Permission: "write"})
 		if err != nil {
 			msgs = append(msgs, fmt.Sprintf("Failed to create team: %s", err.Error()))
 			return msgs, err
