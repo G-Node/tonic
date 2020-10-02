@@ -114,6 +114,10 @@ func TestSessionStore(t *testing.T) {
 	if len(sessions) > 0 {
 		t.Fatalf("Unexpected sessions found in db after deletion: %+v", sessions)
 	}
+
+	if s, err := db.GetSession("does not exist"); s != nil || err.Error() != "not found" {
+		t.Fatalf("Unexpected session returned: %+v (err: %v)", s, err)
+	}
 }
 
 func TestJobStore(t *testing.T) {
@@ -210,6 +214,10 @@ func TestJobStore(t *testing.T) {
 	} else if !fjobr.IsFinished() {
 		t.Fatalf("Finished job, loaded from db, appears unfinished: %s", err.Error())
 	}
+
+	if job, err := db.GetJob(217389); job != nil || err.Error() != "not found" {
+		t.Fatalf("Unexpected job returned: %+v (err: %v)", job, err)
+	}
 }
 
 func TestUserJobs(t *testing.T) {
@@ -256,7 +264,7 @@ func TestUserJobs(t *testing.T) {
 	} else {
 		nother := 0
 		for idx := range alljobs {
-			j := alljobs[idx]
+			j := &alljobs[idx]
 			if j.UserID == testid {
 				if j.Label != testlabel {
 					t.Fatalf("Unexpected row found in db: UID %d; Label: %s", j.UserID, j.Label)
@@ -270,5 +278,11 @@ func TestUserJobs(t *testing.T) {
 		if nother != 1000 {
 			t.Fatalf("Unexpected job count: %d (expected 1000)", nother)
 		}
+	}
+
+	if jobs, err := db.GetUserJobs(999); len(jobs) > 0 {
+		t.Fatalf("Unexpected user job list returned: %+v", jobs)
+	} else if err != nil {
+		t.Fatalf("Error retrieving job list: %v", err)
 	}
 }
