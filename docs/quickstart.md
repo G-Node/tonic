@@ -89,7 +89,7 @@ config := tonic.Config{
 }
 ```
 
-You may notice is reads credentials from a file called `testbot`. This file should have a username and password in JSON format and be in the working directory.
+You may notice it reads credentials from a file called `testbot`. This file should have a username and password in JSON format and be in the working directory.
 
 `./testbot:`
 ```
