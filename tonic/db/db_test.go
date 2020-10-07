@@ -114,6 +114,10 @@ func TestSessionStore(t *testing.T) {
 	if len(sessions) > 0 {
 		t.Fatalf("Unexpected sessions found in db after deletion: %+v", sessions)
 	}
+
+	if s, err := db.GetSession("does not exist"); s != nil || err.Error() != "not found" {
+		t.Fatalf("Unexpected session returned: %+v (err: %v)", s, err)
+	}
 }
 
 func TestJobStore(t *testing.T) {
@@ -144,11 +148,11 @@ func TestJobStore(t *testing.T) {
 
 	job := new(Job)
 	job.Label = "test"
-	job.ValueMap = map[string]string{
-		"key1":       "value1",
-		"key2":       "value2",
-		"anotherkey": "anothervalue",
-		"onemore":    "lastvalue",
+	job.ValueMap = map[string][]string{
+		"key1":       {"value1"},
+		"key2":       {"value2"},
+		"anotherkey": {"anothervalue"},
+		"multivalue": {"lastvalue1", "lastvalue2", "lastvalue3"},
 	}
 	if db.InsertJob(job) != nil {
 		t.Fatalf("Failed inserting new job: %s", err.Error())
@@ -179,8 +183,10 @@ func TestJobStore(t *testing.T) {
 		t.Fatalf("Job ValueMap mismatch: %+v (not %+v)", j, job)
 	} else {
 		for k := range job.ValueMap {
-			if j.ValueMap[k] != job.ValueMap[k] {
-				t.Fatalf("Job ValueMap value mismatch: %s (not %s)", j.ValueMap[k], job.ValueMap[k])
+			for idx := range j.ValueMap[k] {
+				if j.ValueMap[k][idx] != job.ValueMap[k][idx] {
+					t.Fatalf("Job ValueMap value mismatch: %s (not %s)", j.ValueMap[k][idx], job.ValueMap[k][idx])
+				}
 			}
 		}
 	}
@@ -207,6 +213,10 @@ func TestJobStore(t *testing.T) {
 		t.Fatalf("Failed to retrieve finished job from db: %s", err.Error())
 	} else if !fjobr.IsFinished() {
 		t.Fatalf("Finished job, loaded from db, appears unfinished: %s", err.Error())
+	}
+
+	if job, err := db.GetJob(217389); job != nil || err.Error() != "not found" {
+		t.Fatalf("Unexpected job returned: %+v (err: %v)", job, err)
 	}
 }
 
@@ -254,7 +264,7 @@ func TestUserJobs(t *testing.T) {
 	} else {
 		nother := 0
 		for idx := range alljobs {
-			j := alljobs[idx]
+			j := &alljobs[idx]
 			if j.UserID == testid {
 				if j.Label != testlabel {
 					t.Fatalf("Unexpected row found in db: UID %d; Label: %s", j.UserID, j.Label)
@@ -268,5 +278,11 @@ func TestUserJobs(t *testing.T) {
 		if nother != 1000 {
 			t.Fatalf("Unexpected job count: %d (expected 1000)", nother)
 		}
+	}
+
+	if jobs, err := db.GetUserJobs(999); len(jobs) > 0 {
+		t.Fatalf("Unexpected user job list returned: %+v", jobs)
+	} else if err != nil {
+		t.Fatalf("Error retrieving job list: %v", err)
 	}
 }

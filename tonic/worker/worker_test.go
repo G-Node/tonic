@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -59,7 +60,7 @@ func TestWorkerAction(t *testing.T) {
 	w.Start()
 	defer w.Stop()
 	w.client = NewClient("https://example.org", "testadmintoken")
-	j := NewUserJob(NewClient("https://example.org", "testusertoken"), map[string]string{"A": "alpha", "Z": "zeta"})
+	j := NewUserJob(NewClient("https://example.org", "testusertoken"), "workertest", map[string][]string{"A": {"alpha"}, "Z": {"zeta"}})
 	w.Enqueue(j)
 	time.Sleep(time.Millisecond)
 	if !j.IsFinished() {
@@ -91,7 +92,7 @@ func TestWorkerJobFail(t *testing.T) {
 	w.Start()
 	defer w.Stop()
 	w.client = NewClient("https://example.org", "testadmintoken")
-	j := NewUserJob(NewClient("https://example.org", "testusertoken"), map[string]string{"A": "error", "Ω": "omega"})
+	j := NewUserJob(NewClient("https://example.org", "testusertoken"), "workerjobfailtest", map[string][]string{"A": {"error"}, "Ω": {"omega"}})
 	w.Enqueue(j)
 	time.Sleep(time.Millisecond)
 	if !j.IsFinished() {
@@ -105,15 +106,15 @@ func TestWorkerJobFail(t *testing.T) {
 	}
 }
 
-func testAction(values map[string]string, bc, uc *Client) ([]string, error) {
+func testAction(values map[string][]string, bc, uc *Client) ([]string, error) {
 	// Simply return each key:value pair as separate lines in messages
 	// If any value is the string 'error', return with error.
 	m := make([]string, 0, len(values)+2)
 	log.Printf("Got %d values", len(values))
 	var err error
 	for k, v := range values {
-		m = append(m, fmt.Sprintf("%s: %s", k, v))
-		if v == "error" {
+		m = append(m, fmt.Sprintf("%s: %s", k, strings.Join(v, ", ")))
+		if len(v) > 0 && v[0] == "error" {
 			err = fmt.Errorf("Found error value in key %q", k)
 		}
 	}

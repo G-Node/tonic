@@ -9,4 +9,11 @@ Tonic is a framework for building services that interact with the [GIN](https://
 ## Building examples
 
 The project currently includes two built-in services as examples.
-See the [relevant docs](./docs/README.md) for a description of each one and instructions on how to build and use them.
+
+### Quick start
+
+See the [quick start](./docs/quickstart.md) guide for instructions.
+
+### Example service descriptions
+
+See the [more detailed docs](./docs/README.md) for a more thorough description of each service.

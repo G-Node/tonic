@@ -11,18 +11,22 @@ const Form = `
 							<h3 class="ui top attached header">
 								{{.form.Name}}
 							</h3>
+							{{$readonly := false}}
+							{{if .readonly}}
+								{{$readonly = true}}
+							{{end}}
 							{{.form.Description}}
 							<div class="ui attached segment">
 								{{range $page := .form.Pages}}
 									 <p>{{$page.Description}}</p> 
 									{{range $elem := $page.Elements}}
-										<div class="inline {{if $elem.Required}}required{{end}} field ">
-											{{$elem.HTML}}
+										<div class="inline {{if $elem.Required}}required{{end}} field">
+											{{$elem.HTML $readonly}}
 										</div>
 									{{end}}
 									<div class="ui divider"></div>
 								{{end}}
-								{{if not .readonly}}
+								{{if not $readonly}}
 									<div class="inline field">
 										<label></label>
 										<button class="ui green button">Submit</button>
@@ -30,7 +34,7 @@ const Form = `
 								{{end}}
 							</div>
 
-							{{if .readonly}}
+							{{if $readonly}}
 								<h3 class="ui attached header">Status</h3>
 								<div class="ui attached segment">
 									{{if not .end_time}}
