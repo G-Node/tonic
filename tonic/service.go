@@ -125,7 +125,7 @@ func (srv *Tonic) Start() error {
 	srv.log.Print("Web server started")
 
 	if srv.config.GINServer != "" {
-		srv.log.Print("Logging in to gin")
+		srv.log.Printf("Logging in to gin (%s)", srv.config.GINServer)
 		if err := srv.login(); err != nil {
 			return err
 		}
