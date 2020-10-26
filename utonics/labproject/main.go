@@ -73,13 +73,13 @@ func main() {
 			},
 		},
 	}
-	form := form.Form{
+	lpform := form.Form{
 		Pages:       []form.Page{page1, page2},
 		Name:        "Project creation",
 		Description: "",
 	}
 	config := readConfig("testbot")
-	tsrv, err := tonic.NewService(form, setForm, newProject, *config.Config)
+	tsrv, err := tonic.NewService(lpform, setForm, newProject, *config.Config)
 	if err != nil {
 		log.Fatal(err)
 	}
