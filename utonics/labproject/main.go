@@ -6,12 +6,20 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/G-Node/tonic/tonic"
 	"github.com/G-Node/tonic/tonic/form"
 	"github.com/G-Node/tonic/tonic/worker"
 	"github.com/gogs/go-gogs-client"
 )
+
+// labProjectConfig extends the tonic config with fields specific to the
+// labproject service.
+type labProjectConfig struct {
+	*tonic.Config
+	TemplateRepo string
+}
 
 func main() {
 	elems := []form.Element{
@@ -70,16 +78,8 @@ func main() {
 		Name:        "Project creation",
 		Description: "",
 	}
-	username, password := readPassfile("testbot")
-	config := tonic.Config{
-		GINServer:   "https://gin.dev.g-node.org",
-		GINUsername: username,
-		GINPassword: password,
-		CookieName:  "utonic-labproject",
-		Port:        3000,
-		DBPath:      "./labproject.db",
-	}
-	tsrv, err := tonic.NewService(form, setForm, newProject, config)
+	config := readConfig("testbot")
+	tsrv, err := tonic.NewService(form, setForm, newProject, *config.Config)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -272,19 +272,56 @@ func getAvailableOrgsAndTeams(botClient, userClient *worker.Client) (map[string]
 	return validOrgTeams, nil
 }
 
-func readPassfile(filename string) (string, string) {
-	passfile, err := os.Open(filename)
+func readConfig(filename string) *labProjectConfig {
+	confFile, err := os.Open(filename)
 	if err != nil {
 		log.Fatal(err)
 	}
-	passdata, err := ioutil.ReadAll(passfile)
+	confData, err := ioutil.ReadAll(confFile)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	userpass := make(map[string]string)
-	if err := json.Unmarshal(passdata, &userpass); err != nil {
+	config := new(labProjectConfig)
+	if err := json.Unmarshal(confData, config); err != nil {
 		log.Fatal(err)
 	}
-	return userpass["username"], userpass["password"]
+
+	if config.Config == nil {
+		config.Config = new(tonic.Config)
+	}
+
+	// Set defaults for any unset values
+	if config.GINServer == "" {
+		config.GINServer = "https://gin.dev.g-node.org"
+		log.Printf("[config] Setting default GIN server: %s", config.GINServer)
+	}
+	if config.CookieName == "" {
+		config.CookieName = "utonic-labproject"
+		log.Printf("[config] Setting default cookie name: %s", config.CookieName)
+	}
+	if config.Port == 0 {
+		config.Port = 3000
+		log.Printf("[config] Setting default port: %d", config.Port)
+	}
+	if config.DBPath == "" {
+		config.DBPath = "./labproject.db"
+		log.Printf("[config] Setting default dbpath: %s", config.DBPath)
+	}
+
+	// Warn about unset values with no defaults
+	unset := make([]string, 0, 3)
+	if config.GINUsername == "" {
+		unset = append(unset, "GINUsername")
+	}
+	if config.GINPassword == "" {
+		unset = append(unset, "GINPassword")
+	}
+	if config.TemplateRepo == "" {
+		unset = append(unset, "TemplateRepo")
+	}
+	if len(unset) > 0 {
+		log.Printf("WARNING: The following configuration options are unset and have no defaults: %s", strings.Join(unset, ", "))
+	}
+	return config
 }
