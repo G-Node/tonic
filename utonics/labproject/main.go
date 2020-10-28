@@ -78,7 +78,7 @@ func main() {
 		Name:        "Project creation",
 		Description: "",
 	}
-	config := readConfig("testbot")
+	config := readConfig("labproject.json")
 	tsrv, err := tonic.NewService(lpform, setForm, newProject, *config.Config)
 	if err != nil {
 		log.Fatal(err)
