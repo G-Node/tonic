@@ -152,7 +152,7 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 		Name:        project,
 		Description: description,
 		Private:     true,
-		AutoInit:    true,
+		AutoInit:    false,
 		Readme:      "Default",
 	}
 
