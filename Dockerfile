@@ -24,6 +24,8 @@ RUN go build -o ${service} ./utonics/${service}/
 # RUNNER IMAGE
 FROM alpine:latest
 
+RUN apk --no-cache --no-progress add git
+
 WORKDIR /tonic
 
 # Service to compile can be defined as a build arg.
