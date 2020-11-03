@@ -9,6 +9,7 @@ import (
 	"github.com/G-Node/gin-cli/ginclient"
 	ginconfig "github.com/G-Node/gin-cli/ginclient/config"
 	"github.com/G-Node/gin-cli/git"
+	"github.com/G-Node/gin-cli/web"
 	"github.com/G-Node/tonic/tonic/db"
 	"github.com/G-Node/tonic/tonic/form"
 	"github.com/gogs/go-gogs-client"
@@ -45,33 +46,39 @@ func NewClient(webURL, gitURL, token string) *Client {
 	return &Client{Client: gogsClient, webURL: webURL, gitURL: gitURL, token: token}
 }
 
-// NewGINClient logs in to the GIN server, sets up the local configuration, and
+// InitGINClient logs in to the GIN server, sets up the local configuration, and
 // returns a new ginclient.Client instance for running git and git-annex
 // commands.
-func (client *Client) NewGINClient() (*ginclient.Client, error) {
+func (client *Client) InitGINClient() error {
 	webcfg, err := ginconfig.ParseWebString(client.webURL)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	gitcfg, err := ginconfig.ParseGitString(client.gitURL)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	srvcfg := ginconfig.ServerCfg{Web: webcfg, Git: gitcfg}
 	hostkeystr, _, err := git.GetHostKey(gitcfg)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	srvcfg.Git.HostKey = hostkeystr
 	ginconfig.AddServerConf("gin", srvcfg)
 	// Update known hosts file
 	err = git.WriteKnownHosts()
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return ginclient.New("gin"), nil
+	client.GIN = ginclient.New("gin")
+	userinfo, err := client.GetSelfInfo()
+	if err != nil {
+		return err
+	}
+	client.GIN.UserToken = web.UserToken{Username: userinfo.Login, Token: client.token}
+	return client.GIN.MakeSessionKey()
 }
 
 // CloneRepo clones repository 'repo' into directory 'destdir'. The repository
@@ -109,7 +116,6 @@ func (client *Client) CloneRepo(repo, destdir string) error {
 		}
 	}
 	return nil
-
 }
 
 // UserJob extends db.Job with a user token to perform authenticated tasks on
