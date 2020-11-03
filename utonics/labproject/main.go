@@ -223,6 +223,13 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 		return msgs, err
 	}
 
+	// Push
+	msgs = append(msgs, "Uploading template to new project repository")
+	if err := uploadProjectRepository(botClient); err != nil {
+		msgs = append(msgs, fmt.Sprintf("Upload failed: %s", err.Error()))
+		return msgs, err
+	}
+
 	orgTeams, err := botClient.ListTeams(orgName)
 	if err != nil {
 		msgs = append(msgs, fmt.Sprintf("Failed to list teams for org: %s", orgName))
@@ -384,4 +391,16 @@ func readConfig(filename string) *labProjectConfig {
 		log.Printf("WARNING: The following configuration options are unset and have no defaults: %s", strings.Join(unset, ", "))
 	}
 	return config
+}
+
+func uploadProjectRepository(botClient *worker.Client) error {
+	uploadchan := make(chan git.RepoFileStatus)
+	go botClient.GIN.Upload([]string{}, []string{"new"}, uploadchan)
+	for stat := range uploadchan {
+		log.Print(stat)
+		if stat.Err != nil {
+			return stat.Err
+		}
+	}
+	return nil
 }
