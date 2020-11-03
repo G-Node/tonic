@@ -2,7 +2,7 @@
 FROM golang:alpine AS binbuilder
 
 # Build dependencies
-RUN apk --no-cache --no-progress add gcc musl-dev
+RUN apk --no-cache --no-progress add gcc musl-dev git
 
 RUN go version
 COPY ./go.mod ./go.sum /tonic/

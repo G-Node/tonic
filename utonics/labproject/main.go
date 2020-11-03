@@ -292,9 +292,9 @@ func readConfig(filename string) *labProjectConfig {
 	}
 
 	// Set defaults for any unset values
-	if config.GINServer == "" {
-		config.GINServer = "https://gin.dev.g-node.org"
-		log.Printf("[config] Setting default GIN server: %s", config.GINServer)
+	if config.GIN.Web == "" {
+		config.GIN.Web = "https://gin.dev.g-node.org"
+		log.Printf("[config] Setting default GIN server: %s", config.GIN.Web)
 	}
 	if config.CookieName == "" {
 		config.CookieName = "utonic-labproject"
@@ -311,10 +311,10 @@ func readConfig(filename string) *labProjectConfig {
 
 	// Warn about unset values with no defaults
 	unset := make([]string, 0, 3)
-	if config.GINUsername == "" {
+	if config.GIN.Username == "" {
 		unset = append(unset, "GINUsername")
 	}
-	if config.GINPassword == "" {
+	if config.GIN.Password == "" {
 		unset = append(unset, "GINPassword")
 	}
 	if config.TemplateRepo == "" {

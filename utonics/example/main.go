@@ -63,12 +63,9 @@ func main() {
 		Description: "",
 	}
 	config := tonic.Config{
-		GINServer:   "", // not used in example
-		GINUsername: "", // not used in example
-		GINPassword: "", // not used in example
-		CookieName:  "utonic-example",
-		Port:        3000,
-		DBPath:      "./example.db",
+		CookieName: "utonic-example",
+		Port:       3000,
+		DBPath:     "./example.db",
 	}
 	ut, err := tonic.NewService(exampleForm, nil, exampleFunc, config)
 	if err != nil {
