@@ -83,7 +83,10 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	tsrv.Start()
+	err = tsrv.Start()
+	if err != nil {
+		log.Fatal(err)
+	}
 	tsrv.WaitForInterrupt()
 	tsrv.Stop()
 
@@ -293,8 +296,12 @@ func readConfig(filename string) *labProjectConfig {
 
 	// Set defaults for any unset values
 	if config.GIN.Web == "" {
-		config.GIN.Web = "https://gin.dev.g-node.org"
-		log.Printf("[config] Setting default GIN server: %s", config.GIN.Web)
+		config.GIN.Web = "https://gin.dev.g-node.org:443"
+		log.Printf("[config] Setting default GIN server web address: %s", config.GIN.Web)
+	}
+	if config.GIN.Git == "" {
+		config.GIN.Git = "git@gin.dev.g-node.org:2424"
+		log.Printf("[config] Setting default GIN server git address: %s", config.GIN.Git)
 	}
 	if config.CookieName == "" {
 		config.CookieName = "utonic-labproject"

@@ -148,7 +148,7 @@ func (srv *Tonic) renderForm(w http.ResponseWriter, r *http.Request, sess *db.Se
 		return
 	}
 
-	userForm, err := srv.worker.PreprocessForm(srv.form, worker.NewClient(srv.config.GIN.Web, sess.Token))
+	userForm, err := srv.worker.PreprocessForm(srv.form, worker.NewClient(srv.config.GIN.Web, srv.config.GIN.Git, sess.Token))
 	if err != nil {
 		// TODO: Show error to user
 	}
@@ -235,7 +235,7 @@ func (srv *Tonic) renderLog(w http.ResponseWriter, r *http.Request, sess *db.Ses
 		return
 	}
 
-	cl := worker.NewClient(srv.config.GIN.Web, sess.Token)
+	cl := worker.NewClient(srv.config.GIN.Web, srv.config.GIN.Git, sess.Token)
 	user, err := cl.GetSelfInfo()
 	if err != nil {
 		// TODO: Check for error type (unauthorized?)
@@ -269,7 +269,7 @@ func (srv *Tonic) processForm(w http.ResponseWriter, r *http.Request, sess *db.S
 			jobValues[key] = postValues[key]
 		}
 	}
-	client := worker.NewClient(srv.config.GIN.Web, sess.Token)
+	client := worker.NewClient(srv.config.GIN.Web, srv.config.GIN.Git, sess.Token)
 	label := fmt.Sprintf("%s: %s", srv.form.Name, hashValues(jobValues)[:6])
 	srv.worker.Enqueue(worker.NewUserJob(client, label, jobValues))
 

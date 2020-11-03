@@ -106,7 +106,7 @@ func (srv *Tonic) login() error {
 			return err
 		}
 	}
-	srv.worker.SetClient(worker.NewClient(srv.config.GIN.Web, token.Sha1))
+	srv.worker.SetClient(worker.NewClient(srv.config.GIN.Web, srv.config.GIN.Git, token.Sha1))
 	return nil
 }
 

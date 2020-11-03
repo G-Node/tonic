@@ -25,13 +25,17 @@ type PostAction func(v map[string][]string, botClient, userClient *Client) ([]st
 // Client embeds gogs.Client to extend functionality with new convenience
 // methods.  (New clients may be added in the future using the same interface).
 type Client struct {
+	// Embedded GOGS API client
 	*gogs.Client
+	webURL string
+	gitURL string
+	token  string
 }
 
 // NewClient returns a new worker Client.
-func NewClient(url, token string) *Client {
-	gc := gogs.NewClient(url, token)
-	return &Client{Client: gc}
+func NewClient(webURL, gitURL, token string) *Client {
+	gogsClient := gogs.NewClient(webURL, token)
+	return &Client{Client: gogsClient, webURL: webURL, gitURL: gitURL, token: token}
 }
 
 // UserJob extends db.Job with a user token to perform authenticated tasks on
