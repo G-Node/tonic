@@ -3,8 +3,12 @@ package worker
 import (
 	"log"
 	"os"
+	"strings"
 	"time"
 
+	"github.com/G-Node/gin-cli/ginclient"
+	ginconfig "github.com/G-Node/gin-cli/ginclient/config"
+	"github.com/G-Node/gin-cli/git"
 	"github.com/G-Node/tonic/tonic/db"
 	"github.com/G-Node/tonic/tonic/form"
 	"github.com/gogs/go-gogs-client"
@@ -27,6 +31,9 @@ type PostAction func(v map[string][]string, botClient, userClient *Client) ([]st
 type Client struct {
 	// Embedded GOGS API client
 	*gogs.Client
+	// GIN client for running git and git-annex operations. Also implements
+	// some of the GOGS client functionality.
+	GIN    *ginclient.Client
 	webURL string
 	gitURL string
 	token  string
@@ -36,6 +43,73 @@ type Client struct {
 func NewClient(webURL, gitURL, token string) *Client {
 	gogsClient := gogs.NewClient(webURL, token)
 	return &Client{Client: gogsClient, webURL: webURL, gitURL: gitURL, token: token}
+}
+
+// NewGINClient logs in to the GIN server, sets up the local configuration, and
+// returns a new ginclient.Client instance for running git and git-annex
+// commands.
+func (client *Client) NewGINClient() (*ginclient.Client, error) {
+	webcfg, err := ginconfig.ParseWebString(client.webURL)
+	if err != nil {
+		return nil, err
+	}
+
+	gitcfg, err := ginconfig.ParseGitString(client.gitURL)
+	if err != nil {
+		return nil, err
+	}
+
+	srvcfg := ginconfig.ServerCfg{Web: webcfg, Git: gitcfg}
+	hostkeystr, _, err := git.GetHostKey(gitcfg)
+	if err != nil {
+		return nil, err
+	}
+	srvcfg.Git.HostKey = hostkeystr
+	ginconfig.AddServerConf("gin", srvcfg)
+	// Update known hosts file
+	err = git.WriteKnownHosts()
+	if err != nil {
+		return nil, err
+	}
+	return ginclient.New("gin"), nil
+}
+
+// CloneRepo clones repository 'repo' into directory 'destdir'. The repository
+// should be in the form user/repository, without any server information. The
+// server address is configured in the client.
+func (client *Client) CloneRepo(repo, destdir string) error {
+	// NOTE: cloneRepo changes the working directory to the cloned repository
+	// See: https://github.com/G-Node/gin-cli/issues/225
+	// This will need to change when that issue is fixed
+	origdir, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+	defer os.Chdir(origdir)
+	err = os.Chdir(destdir)
+	if err != nil {
+		return err
+	}
+
+	clonechan := make(chan git.RepoFileStatus)
+	go client.GIN.CloneRepo(strings.ToLower(repo), clonechan)
+	for stat := range clonechan {
+		log.Print(stat)
+		if stat.Err != nil {
+			return stat.Err
+		}
+	}
+
+	downloadchan := make(chan git.RepoFileStatus)
+	go client.GIN.GetContent(nil, downloadchan)
+	for stat := range downloadchan {
+		log.Print(stat)
+		if stat.Err != nil {
+			return stat.Err
+		}
+	}
+	return nil
+
 }
 
 // UserJob extends db.Job with a user token to perform authenticated tasks on

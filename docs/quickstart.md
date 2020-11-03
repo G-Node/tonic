@@ -76,6 +76,8 @@ The Lab project service requires a configuration and credentials to make calls a
 
 ### Configuration
 
+TODO: Update this doc
+
 The configuration is currently hard-coded and looks like this:
 ```go
 username, password := readPassfile("testbot")
