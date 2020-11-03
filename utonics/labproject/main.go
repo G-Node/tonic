@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/G-Node/gin-cli/ginclient"
@@ -194,6 +195,33 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 		return msgs, err
 	}
 	msgs = append(msgs, fmt.Sprintf("Repository created: %s", repo.FullName))
+
+	remoteName := "new"
+	repoName := strings.Split(lpconfig.TemplateRepo, "/")[1]
+	localRepoPath := filepath.Join(tempDirName, repoName)
+	origdir, err := os.Getwd()
+	if err != nil {
+		msgs = append(msgs, fmt.Sprintf("Failed to get current working directory: %s", err.Error()))
+		return msgs, err
+	}
+	defer os.Chdir(origdir)
+	if err = os.Chdir(localRepoPath); err != nil {
+		msgs = append(msgs, fmt.Sprintf("Failed to change to newly cloned path %q: %s", localRepoPath, err.Error()))
+		return msgs, err
+	}
+	// Add new remote
+	remoteURL := fmt.Sprintf("%s/%s/%s", lpconfig.GIN.Git, orgName, projectOpt.Name)
+	msgs = append(msgs, fmt.Sprintf("Preparing to push template to new project (adding remote): %s", remoteURL))
+	if err := git.RemoteAdd(remoteName, remoteURL); err != nil {
+		msgs = append(msgs, fmt.Sprintf("Failed to add remote: %s", err.Error()))
+		return msgs, err
+	}
+	msgs = append(msgs, fmt.Sprintf("Added new remote: %s [%s]", remoteName, remoteURL))
+	// Set it as default
+	if err := ginclient.SetDefaultRemote(remoteName); err != nil {
+		msgs = append(msgs, fmt.Sprintf("Failed to set default remote %q: %s", remoteName, err.Error()))
+		return msgs, err
+	}
 
 	orgTeams, err := botClient.ListTeams(orgName)
 	if err != nil {
