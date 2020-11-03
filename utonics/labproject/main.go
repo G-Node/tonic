@@ -8,6 +8,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/G-Node/gin-cli/ginclient"
+	"github.com/G-Node/gin-cli/git"
 	"github.com/G-Node/tonic/tonic"
 	"github.com/G-Node/tonic/tonic/form"
 	"github.com/G-Node/tonic/tonic/worker"
@@ -20,6 +22,9 @@ type labProjectConfig struct {
 	*tonic.Config
 	TemplateRepo string
 }
+
+// lbconfig global configuration for tonic
+var lpconfig *labProjectConfig
 
 func main() {
 	elems := []form.Element{
@@ -78,8 +83,8 @@ func main() {
 		Name:        "Project creation",
 		Description: "",
 	}
-	config := readConfig("labproject.json")
-	tsrv, err := tonic.NewService(lpform, setForm, newProject, *config.Config)
+	lpconfig = readConfig("labproject.json")
+	tsrv, err := tonic.NewService(lpform, setForm, newProject, *lpconfig.Config)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -161,7 +166,27 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 
 	// TODO: Fail if the team exists and the user is not a member
 
-	// Create Repository
+	// Initialise GIN Client to clone and push repository
+	if err := botClient.InitGINClient(); err != nil {
+		msgs = append(msgs, fmt.Sprintf("Failed to initialise GIN Client: %v", err.Error()))
+		return msgs, err
+	}
+
+	// Create temporary directory for cloning
+	tempDirName, err := ioutil.TempDir("", "tonic-clone")
+	if err != nil {
+		msgs = append(msgs, fmt.Sprintf("Failed to create temporary clone directory: %v", err.Error()))
+		return msgs, err
+	}
+
+	// Clone repository
+	msgs = append(msgs, fmt.Sprintf("Cloning template repository %s", lpconfig.TemplateRepo))
+	if err := botClient.CloneRepo(lpconfig.TemplateRepo, tempDirName); err != nil {
+		msgs = append(msgs, fmt.Sprintf("Failed to clone repository %q: %v", lpconfig.TemplateRepo, err.Error()))
+		return msgs, err
+	}
+
+	// Create project repository
 	msgs = append(msgs, fmt.Sprintf("Creating %s/%s", orgName, projectOpt.Name))
 	repo, err := botClient.CreateOrgRepo(orgName, projectOpt)
 	if err != nil {
