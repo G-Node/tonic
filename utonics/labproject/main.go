@@ -210,7 +210,7 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 		return msgs, err
 	}
 	// Add new remote
-	remoteURL := fmt.Sprintf("%s/%s/%s", lpconfig.GIN.Git, orgName, projectOpt.Name)
+	remoteURL := fmt.Sprintf("%s/%s/%s", botClient.GIN.GitAddress(), orgName, projectOpt.Name)
 	msgs = append(msgs, fmt.Sprintf("Preparing to push template to new project (adding remote): %s", remoteURL))
 	if err := git.RemoteAdd(remoteName, remoteURL); err != nil {
 		msgs = append(msgs, fmt.Sprintf("Failed to add remote: %s", err.Error()))
