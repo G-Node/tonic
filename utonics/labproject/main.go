@@ -223,11 +223,80 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 		return msgs, err
 	}
 
+	// Clone submodules
+	msgs = append(msgs, "Cloning submodules")
+	if err := git.Command("submodule", "init").Run(); err != nil {
+		msgs = append(msgs, fmt.Sprintf("Failed to init submodules: %s", err.Error()))
+	}
+	if err := git.Command("submodule", "update").Run(); err != nil {
+		msgs = append(msgs, fmt.Sprintf("Failed to update submodules: %s", err.Error()))
+	}
+
+	submoduleForEach := func(args ...string) {
+		cmdstr := strings.Join(args, " ")
+		cmd := git.Command("submodule", "foreach", cmdstr)
+		stdout, stderr, err := cmd.OutputError()
+		if err != nil {
+			errmsg := fmt.Sprintf("Failed to run command %q in all submodules: %s", cmdstr, err.Error())
+			msgs = append(msgs, errmsg)
+		}
+		fmt.Printf(string(stdout))
+		fmt.Printf(string(stderr))
+	}
+	submoduleForEach("git", "remote", "-v")
+	submoduleForEach("git", "checkout", "master")
+	submoduleForEach("git", "pull")
+
+	// Read .gitmodules and collect submodule names
+	submodules := []string{"public", "raw", "scripts"}
+	for _, submod := range submodules {
+		submodOpt := gogs.CreateRepoOption{
+			Name:        project + "." + submod,
+			Description: description,
+			Private:     true,
+			AutoInit:    false,
+			Readme:      "Default",
+		}
+		msgs = append(msgs, fmt.Sprintf("Creating %s/%s", orgName, submodOpt.Name))
+		repo, err := botClient.CreateOrgRepo(orgName, submodOpt)
+		if err != nil {
+			msgs = append(msgs, fmt.Sprintf("Failed to create repository: %v", err.Error()))
+			return msgs, err
+		}
+		msgs = append(msgs, fmt.Sprintf("Repository created: %s", repo.FullName))
+		// Add new remote
+		remoteURL := fmt.Sprintf("%s/%s/%s", botClient.GIN.GitAddress(), orgName, submodOpt.Name)
+		msgs = append(msgs, fmt.Sprintf("Preparing to push template to new project (adding remote): %s", remoteURL))
+		os.Chdir(submod)
+		if err := git.RemoteAdd(remoteName, remoteURL); err != nil {
+			msgs = append(msgs, fmt.Sprintf("Failed to add remote: %s", err.Error()))
+			return msgs, err
+		}
+		msgs = append(msgs, fmt.Sprintf("Added new remote: %s [%s]", remoteName, remoteURL))
+		// Set it as default
+		if err := ginclient.SetDefaultRemote(remoteName); err != nil {
+			msgs = append(msgs, fmt.Sprintf("Failed to set default remote %q: %s", remoteName, err.Error()))
+			return msgs, err
+		}
+		os.Chdir("..")
+	}
+
 	// Push
 	msgs = append(msgs, "Uploading template to new project repository")
 	if err := uploadProjectRepository(botClient); err != nil {
 		msgs = append(msgs, fmt.Sprintf("Upload failed: %s", err.Error()))
 		return msgs, err
+	}
+
+	submoduleForEach("git", "remote", "-v")
+	for _, submod := range submodules {
+		os.Chdir(submod)
+		msgs = append(msgs, "Uploading submodule to new project repository")
+		if err := uploadProjectRepository(botClient); err != nil {
+			msgs = append(msgs, fmt.Sprintf("Upload failed: %s", err.Error()))
+			return msgs, err
+		}
+		os.Chdir("..")
 	}
 
 	orgTeams, err := botClient.ListTeams(orgName)
