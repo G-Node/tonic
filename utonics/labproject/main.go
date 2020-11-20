@@ -331,12 +331,18 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 		}
 	}
 
-	// Add Repository to Team
+	// Add Repositories to Team
 	msgs = append(msgs, fmt.Sprintf("Adding repository %q to team %q", project, team.Name))
-	botClient.AdminAddTeamRepository(team.ID, project)
-	if err != nil {
-		msgs = append(msgs, fmt.Sprintf("Failed to add repository to team: %s", err.Error()))
+	if err := botClient.AdminAddTeamRepository(team.ID, project); err != nil {
+		msgs = append(msgs, fmt.Sprintf("Failed to add repository %q to team: %s", project, err.Error()))
 		return msgs, err
+	}
+	for smName := range submodules {
+		repoName := project + "." + smName
+		if err := botClient.AdminAddTeamRepository(team.ID, repoName); err != nil {
+			msgs = append(msgs, fmt.Sprintf("Failed to add repository %q to team: %s", repoName, err.Error()))
+			return msgs, err
+		}
 	}
 
 	return msgs, nil
