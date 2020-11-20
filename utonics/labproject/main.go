@@ -1,12 +1,14 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/G-Node/gin-cli/ginclient"
@@ -247,11 +249,14 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 	submoduleForEach("git", "checkout", "master")
 	submoduleForEach("git", "pull")
 
-	// Read .gitmodules and collect submodule names
-	submodules := []string{"public", "raw", "scripts"}
-	for _, submod := range submodules {
+	submodules, err := parseGitModules(".")
+	if err != nil {
+		msgs = append(msgs, fmt.Sprintf("Failed parse .gitmodules: %v", err.Error()))
+		return msgs, err
+	}
+	for smName, submodule := range submodules {
 		submodOpt := gogs.CreateRepoOption{
-			Name:        project + "." + submod,
+			Name:        project + "." + smName,
 			Description: description,
 			Private:     true,
 			AutoInit:    false,
@@ -267,7 +272,7 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 		// Add new remote
 		remoteURL := fmt.Sprintf("%s/%s/%s", botClient.GIN.GitAddress(), orgName, submodOpt.Name)
 		msgs = append(msgs, fmt.Sprintf("Preparing to push template to new project (adding remote): %s", remoteURL))
-		os.Chdir(submod)
+		os.Chdir(submodule.path)
 		if err := git.RemoteAdd(remoteName, remoteURL); err != nil {
 			msgs = append(msgs, fmt.Sprintf("Failed to add remote: %s", err.Error()))
 			return msgs, err
@@ -289,8 +294,8 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 	}
 
 	submoduleForEach("git", "remote", "-v")
-	for _, submod := range submodules {
-		os.Chdir(submod)
+	for _, submodule := range submodules {
+		os.Chdir(submodule.path)
 		msgs = append(msgs, "Uploading submodule to new project repository")
 		if err := uploadProjectRepository(botClient); err != nil {
 			msgs = append(msgs, fmt.Sprintf("Upload failed: %s", err.Error()))
@@ -472,4 +477,43 @@ func uploadProjectRepository(botClient *worker.Client) error {
 		}
 	}
 	return nil
+}
+
+type module struct {
+	path string
+	url  string
+}
+
+// parseSubmodules reads .gitmodules and returns a map of the configured //
+// submodules with their URLs and paths.
+func parseGitModules(repoPath string) (map[string]*module, error) {
+	gmFilePath := filepath.Join(repoPath, ".gitmodules")
+	gitmodulesFile, err := os.Open(gmFilePath)
+	if err != nil {
+		return nil, err
+	}
+	modulesText, err := ioutil.ReadAll(gitmodulesFile)
+	if err != nil {
+		return nil, err
+	}
+	modules := make(map[string]*module)
+	lines := bytes.Split(modulesText, []byte("\n"))
+	curname := ""
+	nameRE := regexp.MustCompile(`\[submodule "(.*)"\]`)
+	pathRE := regexp.MustCompile(`path = (.*)`)
+	urlRE := regexp.MustCompile(`url = (.*)`)
+	for _, line := range lines {
+		if match := nameRE.FindSubmatch(line); match != nil {
+			name := string(match[1])
+			modules[name] = new(module)
+			curname = name
+		} else if match := pathRE.FindSubmatch(line); match != nil {
+			path := string(match[1])
+			modules[curname].path = path
+		} else if match := urlRE.FindSubmatch(line); match != nil {
+			url := string(match[1])
+			modules[curname].url = url
+		}
+	}
+	return modules, nil
 }
