@@ -55,10 +55,10 @@ func main() {
 			Type:        form.TextInput,
 		},
 		{
-			ID:          "description",
-			Label:       "Description",
-			Name:        "description",
-			Description: "Long project description",
+			ID:          "title",
+			Label:       "Title",
+			Name:        "title",
+			Description: "Project title",
 			Type:        form.TextArea,
 			Required:    false,
 		},
@@ -110,10 +110,10 @@ func setForm(f form.Form, botClient, userClient *worker.Client) (*form.Form, err
 func newProject(values map[string][]string, botClient, userClient *worker.Client) ([]string, error) {
 	orgName := values["organisation"][0] // required
 	project := values["project"][0]      // required
-	description := ""
+	title := ""
 	teamName := ""
-	if len(values["description"]) > 0 {
-		description = values["description"][0]
+	if len(values["title"]) > 0 {
+		title = values["title"][0]
 	}
 	if len(values["team"]) > 0 {
 		teamName = values["team"][0]
@@ -184,7 +184,7 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 	createAndSetRemote := func(name string) error {
 		repoOpt := gogs.CreateRepoOption{
 			Name:        name,
-			Description: description,
+			Description: title,
 			Private:     true,
 			AutoInit:    false,
 			Readme:      "Default",
@@ -295,7 +295,7 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 		// Create Team
 		// TODO: Use non admin command when it becomes available
 		msgs = append(msgs, fmt.Sprintf("Creating team %s/%s", orgName, project))
-		team, err = botClient.AdminCreateTeam(orgName, gogs.CreateTeamOption{Name: teamName, Description: description, Permission: "write"})
+		team, err = botClient.AdminCreateTeam(orgName, gogs.CreateTeamOption{Name: teamName, Description: title, Permission: "write"})
 		if err != nil {
 			msgs = append(msgs, fmt.Sprintf("Failed to create team: %s", err.Error()))
 			return msgs, err
