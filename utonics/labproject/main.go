@@ -420,14 +420,6 @@ func readConfig(filename string) *labProjectConfig {
 	}
 
 	// Set defaults for any unset values
-	if config.GIN.Web == "" {
-		config.GIN.Web = "https://gin.dev.g-node.org:443"
-		log.Printf("[config] Setting default GIN server web address: %s", config.GIN.Web)
-	}
-	if config.GIN.Git == "" {
-		config.GIN.Git = "git@gin.dev.g-node.org:2424"
-		log.Printf("[config] Setting default GIN server git address: %s", config.GIN.Git)
-	}
 	if config.CookieName == "" {
 		config.CookieName = "utonic-labproject"
 		log.Printf("[config] Setting default cookie name: %s", config.CookieName)
@@ -442,15 +434,21 @@ func readConfig(filename string) *labProjectConfig {
 	}
 
 	// Warn about unset values with no defaults
-	unset := make([]string, 0, 3)
+	unset := make([]string, 0, 5)
+	if config.GIN.Web == "" {
+		unset = append(unset, "gin.web")
+	}
+	if config.GIN.Git == "" {
+		unset = append(unset, "gin.git")
+	}
 	if config.GIN.Username == "" {
-		unset = append(unset, "GINUsername")
+		unset = append(unset, "gin.username")
 	}
 	if config.GIN.Password == "" {
-		unset = append(unset, "GINPassword")
+		unset = append(unset, "gin.password")
 	}
 	if config.TemplateRepo == "" {
-		unset = append(unset, "TemplateRepo")
+		unset = append(unset, "templaterepo")
 	}
 	if len(unset) > 0 {
 		log.Printf("WARNING: The following configuration options are unset and have no defaults: %s", strings.Join(unset, ", "))
