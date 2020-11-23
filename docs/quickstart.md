@@ -6,7 +6,7 @@ The example service is simply for demonstration purposes. See the [Example servi
 
 ### Compile and run
 
-Requires Go v1.15.
+Requires Go v1.15 or newer.
 
 Clone this repository, build the included services, and run:
 ```
@@ -148,7 +148,7 @@ touch /path/to/labproject.db
 
 To start the service run:
 ```
-docker run -it --rm --volume /path/to/labproject.db:/tonic/labproject.db --volume /path/to/labproject.json:/tonic/labproject.json --name labproject local/tonic:labproject
+docker run -it --rm --publish 3000:3000 --volume /path/to/labproject.db:/tonic/labproject.db --volume /path/to/labproject.json:/tonic/labproject.json --name labproject local/tonic:labproject
 ```
 
 *NOTE:* The `--rm` flag will delete the container once it exits.
@@ -156,7 +156,7 @@ docker run -it --rm --volume /path/to/labproject.db:/tonic/labproject.db --volum
 The `--volume /path/to/labproject.json:/tonic/labproject.json` option places the configuration file (see [Configuration](#configuration) above) into the running container for the service to read. The path must be changed to a file on disk with the configuration values.
 The `--volume /path/to/labproject.db:/tonic/labproject.db` option places the database file (see [Configuration](#configuration) above) into the running container for the service to read. It is important that the file already exists outside the container, otherwise it will be created as a directory on service startup and the service will fail with an error.
 
-The `-p 3000:3000` option publishes port 3000 from inside the container to the host system's network (even externally). It makes the running container accessible at http://localhost:3000. If omitted, the container can be accessed from the container's internal IP address, which can be determined using `docker inspect`.
+The `--publish 3000:3000` option publishes port 3000 from inside the container to the host system's network (even externally). It makes the running container accessible at http://localhost:3000. If omitted, the container can be accessed from the container's internal IP address, which can be determined using `docker inspect labproject`.
 
 The output should be similar to the following:
 ```

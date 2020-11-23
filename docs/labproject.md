@@ -3,7 +3,7 @@
 The [lab project](/utonics/labproject/main.go) service takes advantage of almost all the features of Tonic.
 The purpose of the service is to assist members of a Research Lab (represented by an Organisation on GIN) with using the GIN services in a way that promotes reproducible research practices.
 
-> Note: The following list contains planned features that are not yet implemented.
+> **NOTE:** The following list contains planned features that are not yet implemented.
 
 The service defines a set of forms that can perform administrative actions on behalf of users such as:
 - [x] Creating a repository structure with submodules based on a pre-defined research project template.
@@ -12,7 +12,143 @@ The service defines a set of forms that can perform administrative actions on be
 
 ## Setup and configuration
 
-The configuration specifies the GIN server to connect to (currently gin.dev.g-node.org for testing purposes).  The username and password are for the bot user that the service uses to perform actions.  These credentials should be provided through a json file called `testbot`.
+### Service user
+
+The service provides access to administrative tasks on behalf of non-privileged users in an organisation.
+This requires that the service have its own account (or access to one) that has administrative privileges (owner or admin) for the organisation it will support.
+Before starting the service setup, **create a user on the GIN server** which the service will work with.
+The credentials for the new user will be required for the service configuration.
+
+**Add the new service user to the organisation(s)** which it will support.
+To give the service user admin rights, add it to the **Owners** group, or create a group which has **Admin** rights and add it to that one.
+
+### Service configuration
+
+Create a file called `labproject.json` with the following content:
+```json
+{
+  "gin": {
+    "web": "<web address for GIN service: required>",
+    "git": "<git address for GIN service: required>",
+    "username": "<service username: required>",
+    "password": "<service pasword: required>"
+  },
+  "templaterepo": "<template repository: required>",
+  "cookiename": "<session cookie name: optional (default: utonic-labproject)>",
+  "port": "<port for service to listen on: optional (default: 3000)>",
+  "dbpath": "<path to sqlite database file: optional (default: ./labproject.db)>"
+}
+```
+
+- The `web` value must specify both the protocol scheme and the port, even if it's the standard one, e.g., `https://gin.g-node.org:443`.
+- The `git` value must specify the user and the port, even if it's the standard one, e.g., `git@gin.g-node.org:22`.
+- The `username` and `password` must match the credentials of the user that was created in the previous step.
+
+If any of the above values is incorrect, the service will fail to start.
+
+- The `templaterepo` should be of the form `user/repository` and will be used as the template for all new projects.
+No check is made on startup to determine if the repository exists.
+
+- The `cookiename` value can be any name or word.
+It is used to name the session cookie stored in users' browsers.
+- The `port` is the port the service will listen on.
+Port numbers below 1024 require elevated privileges on the server (or inside the container).
+- The `dbpath` value should point to an accessible path.
+If the file does not exist on startup, an empty database will be created.
+
+### Compile and run
+
+Requires Go v1.15 or newer.
+
+Clone this repository, build the included services, and run:
+```
+git clone https://github.com/G-Node/tonic
+cd tonic
+make
+./build/labproject
+```
+
+After calling the last command, the output should be similar to the following:
+```
+tonic: 2020/10/02 13:56:13 Initialising database
+tonic: 2020/10/02 13:56:13 Initialising worker
+tonic: 2020/10/02 13:56:13 Initialising web service
+tonic: 2020/10/02 13:56:13 Setting up router
+tonic: 2020/10/02 13:56:13 Starting worker
+tonic: 2020/10/02 13:56:13 Worker started
+tonic: 2020/10/02 13:56:13 Starting web service
+tonic: 2020/10/02 13:56:13 Web server started
+tonic: 2020/10/02 13:56:13 Logging in to gin
+tonic: 2020/10/02 13:56:13 Logged in and ready
+```
+
+By default the service runs on port 3000, so you can access the example form at http://localhost:3000.
+If you specified a different port in the [Service configuration](#service-configuration) section, use that one instead.
+
+If the credentials are incorrect (see the [Service configuration](#service-configuration) section above), the startup will fail.
+
+Press `ctrl+c` to stop the service.
+
+There is no built-in way to run the service in a daemon/background mode.
+For that, you must write a service file for your platform (e.g., a systemd service file).
+Alternatively, read below for setting up the service using  Docker.
+
+### Docker
+
+Clone the repository and build the image:
+```
+git clone https://github.com/G-Node/tonic
+cd tonic
+docker build --build-arg service=labproject -t local/tonic:labproject .
+```
+
+The `--build-arg service=labproject` option specifies which service to build.
+If omitted, it will build the [Example](#example) service.
+
+> *NOTE:* Here the image is named `local/tonic` and tagged as `labproject`, but this could be named anything.
+
+For the first run, an empty file must be created for the database that will be mapped into the container:
+```
+touch /path/to/labproject.db
+```
+
+To start the service run:
+```
+docker run -it --rm --publish 3000:3000 --volume /path/to/labproject.db:/tonic/labproject.db --volume /path/to/labproject.json:/tonic/labproject.json --name labproject local/tonic:labproject
+```
+
+> *NOTE:* The `--rm` flag will delete the container once it exits.
+The mapped files (`labproject.db` and `labproject.json`) will remain unaffected on the host.
+
+> *NOTE:* The `-i` and `-t` flags (combined `-it`) attach the running container to the foreground in the terminal.
+This is useful for testing and troubleshooting, but for regular usage, you may want to omit them to make the container run silently in the background.
+
+The `--volume /path/to/labproject.json:/tonic/labproject.json` option places the configuration file (see [Configuration](#configuration) above) into the running container for the service to read.
+The path must be changed to a file on disk with the configuration values.
+The `--volume /path/to/labproject.db:/tonic/labproject.db` option places the database file (see [Configuration](#configuration) above) into the running container for the service to read.
+It is important that the file already exists outside the container, otherwise it will be created as a directory on service startup and the service will fail with an error.
+
+The `--publish 3000:3000` option publishes port 3000 from inside the container to the host system's network (even externally).
+It makes the running container accessible at `http://localhost:3000` or at `http(s)://server-address:3000`.
+If omitted, the container can be accessed from the container's internal IP address, which can be determined using `docker inspect labproject`.
+For production environments, it is considered best practice to configure a reverse proxy web service to forward the server's external web port (80 or 443) to the docker internal IP address, instead of publishing the container port directly.
+
+The output should be similar to the following:
+```
+tonic: 2020/11/23 12:43:21 Initialising database
+tonic: 2020/11/23 12:43:21 Initialising worker
+tonic: 2020/11/23 12:43:21 Initialising web service
+tonic: 2020/11/23 12:43:21 Setting up router
+tonic: 2020/11/23 12:43:21 Starting worker
+tonic: 2020/11/23 12:43:21 Worker started
+tonic: 2020/11/23 12:43:21 Starting web service
+tonic: 2020/11/23 12:43:21 Web server started
+tonic: 2020/11/23 12:43:21 Logging in to gin (<gin web address>)
+tonic: 2020/11/23 12:43:21 Logged in and ready
+```
+
+Type `ctrl+c` to stop the service if it is attached (using `-it`).
+Otherwise, you can stop it with `docker stop labproject`, where `labproject` is the value given to the `--name` argument in the `docker run` call.
 
 ## Internals and components
 
@@ -26,8 +162,10 @@ The service defines the following components:
 The form consists of three elements:
 1. Lab organisation: The name of the organisation in which the repository is going to be created.
 2. Project name: The name of the repository or repositories to be created.
-3. Optionally a team name where the repository will be added. If none is indicated, a team with the same name as the repository will be created.
-4. Description: A long description for the project.
+3. Team: A team name to be created where the repository and the user who requested the creation will be added.
+If left empty, a team with the same name as the repository (i.e., the project name) will be created instead.
+4. Title: A title for the project.
+The project title is added to the repository's Description/Title field on GIN.
 
 ### PreAction
 
