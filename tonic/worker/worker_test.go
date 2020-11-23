@@ -59,8 +59,8 @@ func TestWorkerAction(t *testing.T) {
 	w.PostAction = testAction
 	w.Start()
 	defer w.Stop()
-	w.client = NewClient("https://example.org", "testadmintoken")
-	j := NewUserJob(NewClient("https://example.org", "testusertoken"), "workertest", map[string][]string{"A": {"alpha"}, "Z": {"zeta"}})
+	w.client = NewClient("https://example.org", "git@example.org", "testadmintoken")
+	j := NewUserJob(NewClient("https://example.org", "git@example.org", "testusertoken"), "workertest", map[string][]string{"A": {"alpha"}, "Z": {"zeta"}})
 	w.Enqueue(j)
 	time.Sleep(time.Millisecond)
 	if !j.IsFinished() {
@@ -91,8 +91,8 @@ func TestWorkerJobFail(t *testing.T) {
 	w.PostAction = testAction
 	w.Start()
 	defer w.Stop()
-	w.client = NewClient("https://example.org", "testadmintoken")
-	j := NewUserJob(NewClient("https://example.org", "testusertoken"), "workerjobfailtest", map[string][]string{"A": {"error"}, "Ω": {"omega"}})
+	w.client = NewClient("https://example.org", "git@example.org", "testadmintoken")
+	j := NewUserJob(NewClient("https://example.org", "git@example.org", "testusertoken"), "workerjobfailtest", map[string][]string{"A": {"error"}, "Ω": {"omega"}})
 	w.Enqueue(j)
 	time.Sleep(time.Millisecond)
 	if !j.IsFinished() {

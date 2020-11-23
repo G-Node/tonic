@@ -64,7 +64,7 @@ func TestTonicWithPreAction(t *testing.T) {
 		t.Fatalf("Failed to start tonic service: %s", err.Error())
 	}
 
-	j := worker.NewUserJob(worker.NewClient("", ""), "testjob", map[string][]string{"α": {"alpha"}, "ω": {"omega"}})
+	j := worker.NewUserJob(worker.NewClient("", "", ""), "testjob", map[string][]string{"α": {"alpha"}, "ω": {"omega"}})
 	srv.worker.Enqueue(j)
 
 	for !j.IsFinished() { // wait for job to finish
@@ -95,7 +95,7 @@ func TestTonicWithPostAction(t *testing.T) {
 		t.Fatalf("Failed to start tonic service: %s", err.Error())
 	}
 
-	j := worker.NewUserJob(worker.NewClient("", ""), "testjob", map[string][]string{"α": {"alpha"}, "ω": {"omega"}})
+	j := worker.NewUserJob(worker.NewClient("", "", ""), "testjob", map[string][]string{"α": {"alpha"}, "ω": {"omega"}})
 	srv.worker.Enqueue(j)
 
 	for !j.IsFinished() { // wait for job to finish
@@ -133,7 +133,7 @@ func TestTonicWithActions(t *testing.T) {
 		t.Fatalf("Failed to start tonic service: %s", err.Error())
 	}
 
-	j := worker.NewUserJob(worker.NewClient("", ""), "testtonicwithactions", map[string][]string{"α": {"alpha", "a"}, "ω": {"omega"}})
+	j := worker.NewUserJob(worker.NewClient("", "", ""), "testtonicwithactions", map[string][]string{"α": {"alpha", "a"}, "ω": {"omega"}})
 	srv.worker.Enqueue(j)
 
 	for !j.IsFinished() { // wait for job to finish

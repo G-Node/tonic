@@ -15,12 +15,15 @@ import (
 
 // Config containing all the configuration values for a service.
 type Config struct {
-	GINServer   string
-	Port        uint16
-	CookieName  string
-	DBPath      string
-	GINUsername string
-	GINPassword string
+	GIN struct {
+		Web      string
+		Git      string
+		Username string
+		Password string
+	}
+	Port       uint16
+	CookieName string
+	DBPath     string
 }
 
 // Tonic represents a full service which contains a web server, a database for
@@ -85,10 +88,10 @@ func (srv *Tonic) SetLogger(l *log.Logger) {
 // login to configured GIN server as the bot user that represents this service
 // and attach a new authenticated gogs.Client to the service struct.
 func (srv *Tonic) login() error {
-	username := srv.config.GINUsername
-	password := srv.config.GINPassword
+	username := srv.config.GIN.Username
+	password := srv.config.GIN.Password
 
-	client := gogs.NewClient(srv.config.GINServer, "")
+	client := gogs.NewClient(srv.config.GIN.Web, "")
 	tokens, err := client.ListAccessTokens(username, password)
 	if err != nil {
 		return err
@@ -103,7 +106,7 @@ func (srv *Tonic) login() error {
 			return err
 		}
 	}
-	srv.worker.SetClient(worker.NewClient(srv.config.GINServer, token.Sha1))
+	srv.worker.SetClient(worker.NewClient(srv.config.GIN.Web, srv.config.GIN.Git, token.Sha1))
 	return nil
 }
 
@@ -124,8 +127,8 @@ func (srv *Tonic) Start() error {
 	srv.web.Start()
 	srv.log.Print("Web server started")
 
-	if srv.config.GINServer != "" {
-		srv.log.Print("Logging in to gin")
+	if srv.config.GIN.Web != "" {
+		srv.log.Printf("Logging in to gin (%s)", srv.config.GIN.Web)
 		if err := srv.login(); err != nil {
 			return err
 		}

@@ -88,11 +88,11 @@ func (srv *Tonic) userLoginPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// If no GINServer is defined, set the token as the username + password and let them
-	// through with any password.
+	// If no GIN.Web server is defined, set the token as the username +
+	// password and let them through with any password.
 	var userToken string
-	if srv.config.GINServer != "" {
-		client := gogs.NewClient(srv.config.GINServer, "")
+	if srv.config.GIN.Web != "" {
+		client := gogs.NewClient(srv.config.GIN.Web, "")
 		tokens, err := client.ListAccessTokens(username, password)
 		if err != nil {
 			srv.web.ErrorResponse(w, http.StatusUnauthorized, "authentication failed")
@@ -148,7 +148,7 @@ func (srv *Tonic) renderForm(w http.ResponseWriter, r *http.Request, sess *db.Se
 		return
 	}
 
-	userForm, err := srv.worker.PreprocessForm(srv.form, worker.NewClient(srv.config.GINServer, sess.Token))
+	userForm, err := srv.worker.PreprocessForm(srv.form, worker.NewClient(srv.config.GIN.Web, srv.config.GIN.Git, sess.Token))
 	if err != nil {
 		// TODO: Show error to user
 	}
@@ -235,7 +235,7 @@ func (srv *Tonic) renderLog(w http.ResponseWriter, r *http.Request, sess *db.Ses
 		return
 	}
 
-	cl := worker.NewClient(srv.config.GINServer, sess.Token)
+	cl := worker.NewClient(srv.config.GIN.Web, srv.config.GIN.Git, sess.Token)
 	user, err := cl.GetSelfInfo()
 	if err != nil {
 		// TODO: Check for error type (unauthorized?)
@@ -269,7 +269,7 @@ func (srv *Tonic) processForm(w http.ResponseWriter, r *http.Request, sess *db.S
 			jobValues[key] = postValues[key]
 		}
 	}
-	client := worker.NewClient(srv.config.GINServer, sess.Token)
+	client := worker.NewClient(srv.config.GIN.Web, srv.config.GIN.Git, sess.Token)
 	label := fmt.Sprintf("%s: %s", srv.form.Name, hashValues(jobValues)[:6])
 	srv.worker.Enqueue(worker.NewUserJob(client, label, jobValues))
 
