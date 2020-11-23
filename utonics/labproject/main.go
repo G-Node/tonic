@@ -67,22 +67,8 @@ func main() {
 		Description: "Creating a new project will create a new set of repositories based on the lab template and a team for granting access to all project members.",
 		Elements:    elems,
 	}
-	page2 := form.Page{
-		Description: "Extra repository submodules.  Each of the following elements creates an extra submodule which can be managed independently.  It has its own access permissions, public visibility, and can be published separately.  It appears as a subdirectory at the top level of the main repository.",
-		Elements: []form.Element{
-			{
-				ID:          "submodules",
-				Label:       "Submodules",
-				Name:        "submodules",
-				Description: "",
-				Required:    false,
-				Type:        form.CheckboxInput,
-				ValueList:   []string{"Raw", "Public", "Figures"},
-			},
-		},
-	}
 	lpform := form.Form{
-		Pages:       []form.Page{page1, page2},
+		Pages:       []form.Page{page1},
 		Name:        "Project creation",
 		Description: "",
 	}
