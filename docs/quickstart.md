@@ -6,9 +6,9 @@ The example service is simply for demonstration purposes. See the [Example servi
 
 ### Compile and run
 
-Requires Go v1.15.
+Requires Go v1.15 or newer.
 
-Clone this repository, build the examples, and run:
+Clone this repository, build the included services, and run:
 ```
 git clone https://github.com/G-Node/tonic
 cd tonic
@@ -72,42 +72,35 @@ Type `ctrl+c` to stop the service.
 
 ## Lab project service
 
-The Lab project service requires a configuration and credentials to make calls against a GIN API. See the [Lab project service](./labproject.md) document for a detailed description.
+The Lab project service requires a configuration and credentials to make calls against a GIN API and clone repositories. See the [Lab project service](./labproject.md) document for a detailed description.
 
 ### Configuration
 
-TODO: Update this doc
-
-The configuration is currently hard-coded and looks like this:
-```go
-username, password := readPassfile("testbot")
-config := tonic.Config{
-    GINServer:   "https://gin.dev.g-node.org",
-    GINUsername: username,
-    GINPassword: password,
-    CookieName:  "utonic-labproject",
-    Port:        3000,
-    DBPath:      "./labproject.db",
-}
-```
-
-You may notice it reads credentials from a file called `testbot`. This file should have a username and password in JSON format and be in the working directory.
-
-`./testbot:`
-```
+The configuration is read from a file called `labproject.json` in the working directory where the service is launched.
+The following configuration keys are supported:
+```json
 {
-    "username": "testbot",
-    "password": "very secret password"
+  "gin": {
+    "web": "<web address for GIN service: required>",
+      "git": "<git address for GIN service: required>",
+      "username": "<service username: required>",
+      "password": "<service pasword: required>"
+  },
+  "templaterepo": "<template repository: required>",
+  "cookiename": "<session cookie name: optional (default: utonic-labproject)>",
+  "port": "<port for service to listen on: optional (default: 3000)>",
+  "dbpath": "<path to sqlite database file: optional (default: ./labproject.db)>"
 }
 ```
 
-The credentials can be the username and password for any user on the GIN DEV server (gin.dev.g-node.org).
+If any configuration values marked `required` are not specified, the service will fail to start.
+Omitting optional values will set and print the default value on startup.
 
 ### Compile and run
 
 Requires Go v1.15.
 
-Clone this repository, build the examples, and run:
+Clone this repository, build the included services, and run:
 ```
 git clone https://github.com/G-Node/tonic
 cd tonic
@@ -148,29 +141,35 @@ The `--build-arg service=labproject` option specifies which service to build. If
 
 *NOTE:* Here the image is named `local/tonic` and tagged as `labproject`, but this could be named anything.
 
-For the example, no options or external files are required to run:
+For the first run, an empty file must be created for the database that will be mapped into the container:
 ```
-docker run --rm -p 3000:3000 --volume /path/to/credentials:/tonic/testbot local/tonic:labproject
+touch /path/to/labproject.db
+```
+
+To start the service run:
+```
+docker run -it --rm --publish 3000:3000 --volume /path/to/labproject.db:/tonic/labproject.db --volume /path/to/labproject.json:/tonic/labproject.json --name labproject local/tonic:labproject
 ```
 
 *NOTE:* The `--rm` flag will delete the container once it exits.
 
-The `--volume /path/to/credentials:/tonic/testbot` option places the credentials file (see [Configuration](#configuration) above) into the running container for the service to read. The path must be changed to a file on disk with the correct username and password.
+The `--volume /path/to/labproject.json:/tonic/labproject.json` option places the configuration file (see [Configuration](#configuration) above) into the running container for the service to read. The path must be changed to a file on disk with the configuration values.
+The `--volume /path/to/labproject.db:/tonic/labproject.db` option places the database file (see [Configuration](#configuration) above) into the running container for the service to read. It is important that the file already exists outside the container, otherwise it will be created as a directory on service startup and the service will fail with an error.
 
-The `-p 3000:3000` option publishes port 3000 from inside the container to the host system's network (even externally). It makes the running container accessible at http://localhost:3000. If omitted, the container can be accessed from the container's internal IP address, which can be determined using `docker inspect`.
+The `--publish 3000:3000` option publishes port 3000 from inside the container to the host system's network (even externally). It makes the running container accessible at http://localhost:3000. If omitted, the container can be accessed from the container's internal IP address, which can be determined using `docker inspect labproject`.
 
 The output should be similar to the following:
 ```
-tonic: 2020/10/02 13:31:06 Initialising database
-tonic: 2020/10/02 13:31:06 Initialising worker
-tonic: 2020/10/02 13:31:06 Initialising web service
-tonic: 2020/10/02 13:31:06 Setting up router
-tonic: 2020/10/02 13:31:06 Starting worker
-tonic: 2020/10/02 13:31:06 Worker started
-tonic: 2020/10/02 13:31:06 Starting web service
-tonic: 2020/10/02 13:31:06 Web server started
-tonic: 2020/10/02 13:31:06 No server configured - skipping login and disabling login requirements
-tonic: 2020/10/02 13:31:06 WARNING: Authentication is open!
+tonic: 2020/11/23 12:43:21 Initialising database
+tonic: 2020/11/23 12:43:21 Initialising worker
+tonic: 2020/11/23 12:43:21 Initialising web service
+tonic: 2020/11/23 12:43:21 Setting up router
+tonic: 2020/11/23 12:43:21 Starting worker
+tonic: 2020/11/23 12:43:21 Worker started
+tonic: 2020/11/23 12:43:21 Starting web service
+tonic: 2020/11/23 12:43:21 Web server started
+tonic: 2020/11/23 12:43:21 Logging in to gin (<gin web address>)
+tonic: 2020/11/23 12:43:21 Logged in and ready
 ```
 
 Type `ctrl+c` to stop the service.
