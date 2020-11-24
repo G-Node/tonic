@@ -194,6 +194,7 @@ If the input is valid, the service performs the following actions:
   - Configure each **submodule** with a new remote pointing to the newly created submodule repositories on the server.
 - Push the **repository contents** to the server.
   - Push each **submodule's contents** to the server.
-- Create a **team** with the _Team name_ provided by the user (or _Project name_ if unspecified), the team gets admin rights over its repositories.
+- Create a **team** with the _Team name_ provided by the user (or _Project name_ if unspecified).
+The team gets write permissions on its repositories.
 - Adds the logged in user to the **team**.
 - Adds the **repository** and its **submodules** to the **team**.
