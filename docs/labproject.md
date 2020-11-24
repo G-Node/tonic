@@ -96,7 +96,7 @@ Alternatively, read below for setting up the service using  Docker.
 
 ### Docker
 
-> *NOTE:* Please refer to Docker documentation to install Docker and learn how to use it, the commands that follows can be paste in a bash/shell script window.
+> *NOTE:* Please refer to Docker documentation to install Docker and learn how to use it, the commands that follows can be pasted in a bash/shell window.
 
 Clone the repository and build the image:
 ```
