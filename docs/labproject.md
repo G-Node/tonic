@@ -16,22 +16,23 @@ The service defines a set of forms that can perform administrative actions on be
 
 The service provides access to administrative tasks on behalf of non-privileged users in an organisation.
 This requires that the service have its own account (or access to one) that has administrative privileges (owner or admin) for the organisation it will support.
-Before starting the service setup, **create a user on the GIN server** which the service will work with.
-The credentials for the new user will be required for the service configuration.
+ This account will be called `bot user` here, in order to distinguish it from the non-privileged user who will use the service.
+Before starting the service setup, **create a user on the GIN server** which will become the `bot user` the service will work with.
+The credentials for the new `bot user` will be required for the service configuration.
 
-**Add the new service user to the organisation(s)** which it will support.
-To give the service user admin rights, add it to the **Owners** group, or create a group which has **Admin** rights and add it to that one.
+**Add the `bot user` to the organisation(s)** which it will support, and
+give it admin rights by adding it to the **Owners** group.
 
 ### Service configuration
 
-Create a file called `labproject.json` with the following content:
+Create a file called `labproject.json` (later called via `/path/to/labproject.json`, so note where you saved it) with the following content:
 ```json
 {
   "gin": {
     "web": "<web address for GIN service: required>",
     "git": "<git address for GIN service: required>",
-    "username": "<service username: required>",
-    "password": "<service pasword: required>"
+    "username": "<bot user username: required>",
+    "password": "<bot user pasword: required>"
   },
   "templaterepo": "<template repository: required>",
   "cookiename": "<session cookie name: optional (default: utonic-labproject)>",
@@ -42,7 +43,7 @@ Create a file called `labproject.json` with the following content:
 
 - The `web` value must specify both the protocol scheme and the port, even if it's the standard one, e.g., `https://gin.g-node.org:443`.
 - The `git` value must specify the user and the port, even if it's the standard one, e.g., `git@gin.g-node.org:22`.
-- The `username` and `password` must match the credentials of the user that was created in the previous step.
+- The `username` and `password` must match the credentials of the `bot user` that was created in the previous step.
 
 If any of the above values is incorrect, the service will fail to start.
 
@@ -95,6 +96,8 @@ Alternatively, read below for setting up the service using  Docker.
 
 ### Docker
 
+> *NOTE:* Please refer to Docker documentation to install Docker and learn how to use it, the commands that follows can be pasted in a bash/shell window.
+
 Clone the repository and build the image:
 ```
 git clone https://github.com/G-Node/tonic
@@ -111,6 +114,9 @@ For the first run, an empty file must be created for the database that will be m
 ```
 touch /path/to/labproject.db
 ```
+> *NOTE:* `/path/to/` should be modified.
+It should be the relative path from your current terminal's working directory or an absolute path.
+You will have to modify it to the same path in the following commands.
 
 To start the service run:
 ```
@@ -124,7 +130,7 @@ The mapped files (`labproject.db` and `labproject.json`) will remain unaffected 
 This is useful for testing and troubleshooting, but for regular usage, you may want to omit them to make the container run silently in the background.
 
 The `--volume /path/to/labproject.json:/tonic/labproject.json` option places the configuration file (see [Configuration](#configuration) above) into the running container for the service to read.
-The path must be changed to a file on disk with the configuration values.
+The path `/path/to/labproject.json` must be changed to a file on disk with the configuration values.
 The `--volume /path/to/labproject.db:/tonic/labproject.db` option places the database file (see [Configuration](#configuration) above) into the running container for the service to read.
 It is important that the file already exists outside the container, otherwise it will be created as a directory on service startup and the service will fail with an error.
 
@@ -149,6 +155,7 @@ tonic: 2020/11/23 12:43:21 Logged in and ready
 
 Type `ctrl+c` to stop the service if it is attached (using `-it`).
 Otherwise, you can stop it with `docker stop labproject`, where `labproject` is the value given to the `--name` argument in the `docker run` call.
+You may also use the docker desktop app.
 
 ## Internals and components
 
@@ -170,8 +177,8 @@ The project title is added to the repository's Description/Title field on GIN.
 ### PreAction
 
 The PreAction determines whether there are any organisations on GIN in which the user is allowed to create repositories.  The requirements for an organisation to be eligible are:
-- The service bot must be an owner or administrator of the organisation.
-- The user must be a member of the organisation.
+- The `bot user` must be an owner or administrator of the organisation.
+- The logged-in user must be a member of the organisation.
 
 Since multiple organisations may fit the requirements, the PreAction determines their names and sets the available values for the _Lab organisation_ select field.
 
@@ -188,5 +195,6 @@ If the input is valid, the service performs the following actions:
 - Push the **repository contents** to the server.
   - Push each **submodule's contents** to the server.
 - Create a **team** with the _Team name_ provided by the user (or _Project name_ if unspecified).
+The team gets write permissions on its repositories.
 - Adds the logged in user to the **team**.
 - Adds the **repository** and its **submodules** to the **team**.
