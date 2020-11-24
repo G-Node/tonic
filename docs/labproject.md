@@ -113,7 +113,9 @@ For the first run, an empty file must be created for the database that will be m
 ```
 touch /path/to/labproject.db
 ```
-> *NOTE:* /path/to/ is supposed to be modified, it will be a relative path from the folder your terminal/bash is open in. You will have to modify it to the same path in the following commands.
+> *NOTE:* `/path/to/` should be modified.
+It should be the relative path from your current terminal's working directory or an absolute path.
+You will have to modify it to the same path in the following commands.
 
 To start the service run:
 ```
