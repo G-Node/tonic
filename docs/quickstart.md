@@ -1,5 +1,8 @@
 # Quick start
 
+If you like to have a rapid look at what the tonic service looks like, we encourage you to run the example service in docker. We also provide quick start guide for the lab project service, and a way to build the services directly, but you may want to read the complete (but still short) documentation instead of quick starting.
+
+
 ## Example service
 
 The example service is simply for demonstration purposes. See the [Example service](./example.md) document for a detailed description.
