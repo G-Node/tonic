@@ -15,7 +15,8 @@ The service defines a set of forms that can perform administrative actions on be
 ### Service user
 
 The service provides access to administrative tasks on behalf of non-privileged users in an organisation.
-This requires that the service have its own account (or access to one) that has administrative privileges (owner or admin) for the organisation it will support, This account will be called `bot user` here, in order to distinguish it from the non-privileged user who will use the service.
+This requires that the service have its own account (or access to one) that has administrative privileges (owner or admin) for the organisation it will support.
+ This account will be called `bot user` here, in order to distinguish it from the non-privileged user who will use the service.
 Before starting the service setup, **create a user on the GIN server** which will become the `bot user` the service will work with.
 The credentials for the new `bot user` will be required for the service configuration.
 
