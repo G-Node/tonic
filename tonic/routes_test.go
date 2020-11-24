@@ -116,11 +116,11 @@ func TestLogRoutes(t *testing.T) {
 
 	jobLabel := "TestJob"
 
-	checkLogJobCount := func(route string, nexpected int) {
+	checkLogJobCount := func(nexpected int) {
 		rr := httptest.NewRecorder()
-		req, err := http.NewRequest("GET", route, nil)
+		req, err := http.NewRequest("GET", "/log", nil)
 		if err != nil {
-			t.Errorf("failed to create request: %s", route)
+			t.Errorf("failed to create request for /log route")
 		}
 		req.Header.Add("Cookie", fmt.Sprintf("test-cookie=%s", cookie))
 		handler.ServeHTTP(rr, req)
@@ -137,14 +137,42 @@ func TestLogRoutes(t *testing.T) {
 		}
 	}
 
-	checkLogJobCount("/log", 0)
+	checkLogJobCount(0)
 
 	srv.db.InsertJob(&db.Job{ID: 12, UserID: 42, Label: jobLabel})
-	checkLogJobCount("/log", 1)
+	checkLogJobCount(1)
 
 	srv.db.InsertJob(&db.Job{ID: 16, UserID: 42, Label: jobLabel})
-	checkLogJobCount("/log", 2)
+	checkLogJobCount(2)
 
 	srv.db.InsertJob(&db.Job{ID: 26, UserID: 44, Label: jobLabel}) // other user
-	checkLogJobCount("/log", 2)
+	checkLogJobCount(2)
+
+	// Add other user's session to the database
+	otherSession := db.NewSession("other-test-token", 44)
+	srv.db.InsertSession(otherSession)
+	checkJobView := func(session *db.Session, jobID int64, expectedStatus int) {
+		route := fmt.Sprintf("/log/%d", jobID)
+		rr := httptest.NewRecorder()
+		req, err := http.NewRequest("GET", route, nil)
+		if err != nil {
+			t.Errorf("failed to create request: %s", route)
+		}
+		req.Header.Add("Cookie", fmt.Sprintf("test-cookie=%s", session.ID))
+		handler.ServeHTTP(rr, req)
+		if status := rr.Code; status != expectedStatus {
+			t.Errorf("handler returned wrong status code: got %v expected %v", status, expectedStatus)
+		}
+	}
+
+	checkJobView(testSession, 12, 200)
+	checkJobView(testSession, 16, 200)
+	checkJobView(testSession, 26, 401)
+
+	checkJobView(otherSession, 12, 401)
+	checkJobView(otherSession, 16, 401)
+	checkJobView(otherSession, 26, 200)
+
+	checkJobView(testSession, 1000, 404)
+	checkJobView(otherSession, 1000, 404)
 }
