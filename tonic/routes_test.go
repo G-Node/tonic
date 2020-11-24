@@ -67,7 +67,7 @@ func TestFormRoutes(t *testing.T) {
 	handler := srv.web.Handler
 
 	// Add test cookie to the database
-	testSession := db.NewSession("test-token")
+	testSession := db.NewSession("test-token", 198)
 	srv.db.InsertSession(testSession)
 
 	cookie := testSession.ID

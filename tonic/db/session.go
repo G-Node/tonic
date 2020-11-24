@@ -13,17 +13,20 @@ type Session struct {
 	ID string `xorm:"pk"`
 	// App Token for user
 	Token string
+	// ID of the user who owns the session (maps to GIN user ID)
+	UserID int64
 	// Time when the session was created (for expiration)
 	Created time.Time
 }
 
 // NewSession creates a new session for a user with the given token and a new
 // unique ID.
-func NewSession(token string) *Session {
+func NewSession(token string, userID int64) *Session {
 	sess := new(Session)
 	sess.ID = uuid.New().String()
 	sess.Token = token
 	sess.Created = time.Now()
+	sess.UserID = userID
 	return sess
 }
 

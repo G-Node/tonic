@@ -77,7 +77,7 @@ func TestSessionStore(t *testing.T) {
 		t.Fatalf("Failed to delete empty session: %s", err.Error())
 	}
 
-	sess := NewSession("faketoken")
+	sess := NewSession("faketoken", 12)
 	if db.InsertSession(sess) != nil {
 		t.Fatalf("Failed inserting new session: %s", err.Error())
 	}
@@ -86,7 +86,7 @@ func TestSessionStore(t *testing.T) {
 		t.Fatal("Succeeded inserting duplicate session")
 	}
 
-	dupe := NewSession("anothertoken")
+	dupe := NewSession("anothertoken", 19)
 	dupe.ID = sess.ID
 	if db.InsertSession(dupe) == nil {
 		t.Fatal("Succeeded inserting session with conflicting ID")
