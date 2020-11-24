@@ -184,6 +184,11 @@ func (srv *Tonic) showJob(w http.ResponseWriter, r *http.Request, sess *db.Sessi
 		return
 	}
 
+	if job.UserID != sess.UserID {
+		srv.web.ErrorResponse(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
 	tmpl := template.New("layout")
 	tmpl, err = tmpl.Parse(templates.Layout)
 	if err != nil {
