@@ -91,6 +91,7 @@ func (srv *Tonic) userLoginPost(w http.ResponseWriter, r *http.Request) {
 	// If no GIN.Web server is defined, set the token as the username +
 	// password and let them through with any password.
 	var userToken string
+	var userID int64
 	if srv.config.GIN.Web != "" {
 		client := gogs.NewClient(srv.config.GIN.Web, "")
 		tokens, err := client.ListAccessTokens(username, password)
@@ -110,11 +111,19 @@ func (srv *Tonic) userLoginPost(w http.ResponseWriter, r *http.Request) {
 		} else {
 			userToken = tokens[0].Sha1
 		}
+		client = gogs.NewClient(srv.config.GIN.Web, userToken)
+		user, err := client.GetSelfInfo()
+		if err != nil {
+			srv.web.ErrorResponse(w, http.StatusInternalServerError, "login succeeded but failed to retrieve user data")
+			return
+		}
+		userID = user.ID
 	} else {
 		userToken = username + password
+		userID = -1
 	}
 
-	sess := db.NewSession(userToken)
+	sess := db.NewSession(userToken, userID)
 
 	cookie := http.Cookie{
 		Name:    srv.config.CookieName,
@@ -172,6 +181,11 @@ func (srv *Tonic) showJob(w http.ResponseWriter, r *http.Request, sess *db.Sessi
 	if err != nil || job == nil {
 		srv.log.Printf("Job not found %d: %s", jobid, err.Error())
 		srv.web.ErrorResponse(w, http.StatusNotFound, "No such job")
+		return
+	}
+
+	if job.UserID != sess.UserID {
+		srv.web.ErrorResponse(w, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 
@@ -235,15 +249,7 @@ func (srv *Tonic) renderLog(w http.ResponseWriter, r *http.Request, sess *db.Ses
 		return
 	}
 
-	cl := worker.NewClient(srv.config.GIN.Web, srv.config.GIN.Git, sess.Token)
-	user, err := cl.GetSelfInfo()
-	if err != nil {
-		// TODO: Check for error type (unauthorized?)
-		srv.web.ErrorResponse(w, http.StatusInternalServerError, "Error reading jobs from DB")
-		return
-	}
-
-	joblog, err := srv.db.GetUserJobs(user.ID)
+	joblog, err := srv.db.GetUserJobs(sess.UserID)
 	if err != nil {
 		srv.web.ErrorResponse(w, http.StatusInternalServerError, "Error reading jobs from DB")
 		return
