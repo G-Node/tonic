@@ -36,7 +36,7 @@ Create a file called `labproject.json` (later called via `/path/to/labproject.js
   },
   "templaterepo": "<template repository: required>",
   "cookiename": "<session cookie name: optional (default: utonic-labproject)>",
-  "port": "<port for service to listen on: optional (default: 3000)>",
+  "port": <port for service to listen on: optional (default: 3000)>,
   "dbpath": "<path to sqlite database file: optional (default: ./labproject.db)>"
 }
 ```
@@ -54,6 +54,7 @@ No check is made on startup to determine if the repository exists.
 It is used to name the session cookie stored in users' browsers.
 - The `port` is the port the service will listen on.
 Port numbers below 1024 require elevated privileges on the server (or inside the container).
+Note that unlike the rest of the options, the port value is a number and should not be quoted.
 - The `dbpath` value should point to an accessible path.
 If the file does not exist on startup, an empty database will be created.
 
