@@ -252,6 +252,7 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 	}
 	for smName, submodule := range submodules {
 		os.Chdir(submodule.path)
+		smName = strings.ReplaceAll(smName, "/", "_")
 		if err := createAndSetRemote(project + "." + smName); err != nil {
 			return msgs, err
 		}
