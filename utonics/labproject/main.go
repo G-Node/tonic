@@ -276,7 +276,10 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 		}
 		os.Chdir("..")
 	}
-
+	
+  // Change the gitmodules information to link to the new repositories
+  // ???
+  
 	orgTeams, err := botClient.ListTeams(orgName)
 	if err != nil {
 		msgs = append(msgs, fmt.Sprintf("Failed to list teams for org: %s", orgName))
