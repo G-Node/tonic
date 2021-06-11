@@ -266,10 +266,11 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 		return msgs, err
 	}
 
-	for _, submodule := range submodules {
+	for smName, submodule := range submodules {
 		os.Chdir(submodule.path)
+		smName = strings.ReplaceAll(smName, "/", "_")
 		msgs = append(msgs, "Uploading submodule to new project repository")
-		if err := uploadProjectRepository(botClient, remoteName); err != nil {
+		if err := uploadProjectRepository(botClient, project + "." + smName); err != nil {
 			msgs = append(msgs, fmt.Sprintf("Upload failed: %s", err.Error()))
 			return msgs, err
 		}
