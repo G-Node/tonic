@@ -325,6 +325,7 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 		return msgs, err
 	}
 	for smName := range submodules {
+	  smName = strings.ReplaceAll(smName, "/", "_")
 		repoName := project + "." + smName
 		if err := botClient.AdminAddTeamRepository(team.ID, repoName); err != nil {
 			msgs = append(msgs, fmt.Sprintf("Failed to add repository %q to team: %s", repoName, err.Error()))
