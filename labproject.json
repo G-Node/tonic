@@ -1,0 +1,12 @@
+{
+  "gin": {
+    "web": "https://gindata.biologie.hu-berlin.de:443",
+    "git": "git@gindata.biologie.hu-berlin.de:10022",
+    "username": "testbot",
+    "password": "testbot"
+  },
+
+  "templaterepo": "G-Node/research_repo_template_nosub",
+ "cookiename": "utonic-labproject",
+  "dbpath": "./labproject.db"
+}
