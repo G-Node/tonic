@@ -217,8 +217,6 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 	if err := createAndSetRemote(project); err != nil {
 		return msgs, err
 	}
-	
-
 
 	// Clone submodules
 	msgs = append(msgs, "Cloning submodules")
@@ -261,10 +259,20 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 		os.Chdir("..")
 		// Change the gitmodules information to link to the new repositories
 		// function should be git submodule set-url [oldpath = smName] [new URL = gitaddress + orgName+strings.ReplaceAll(smName, "/", "_")], loop over submodules, but run in parent folder
-		git.Command("submodule", "set-url", smName, lpconfig.GIN.Web +"/"+orgName+"/"+ subname)
+		os.Chdir("..")
+		git.Command("submodule", "set-url", smName, lpconfig.GIN.Web+"/"+orgName+"/"+subname)
 	}
 
+// Clone labcommons submodules
 
+	msgs = append(msgs, "Adding labcommons t4")
+	str := []string{lpconfig.GIN.Web, "/", orgName, "/labcommons"}
+	labcad := strings.Join(str, "")
+	addlcCmd := git.Command("submodule", "add", labcad, "labcommons")
+	if stdout, stderr, err := addlcCmd.OutputError(); err != nil {
+		msgs = append(msgs, fmt.Sprintf("Failed to init labcommons: %s - %s", string(stdout), string(stderr)))
+		return msgs, err
+	}
 	
 	// Push
 	msgs = append(msgs, "Uploading template to new project repository")
@@ -283,23 +291,7 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 		os.Chdir("..")
 	}
 
-	// Clone labcommons submodules
-	msgs = append(msgs, "Adding labcommons")
-	str := []string{lpconfig.GIN.Web, "/", orgName, "/labcommons"}
-	labcad:= strings.Join(str, "")
-	addlcCmd := git.Command("submodule", "add", labcad, "./labcommons")
-	if stdout, stderr, err := addlcCmd.OutputError(); err != nil {
-		msgs = append(msgs, fmt.Sprintf("Failed to init labcommons: %s - %s", string(stdout), string(stderr)))
-		return msgs, err
-	}
-	
-		msgs = append(msgs, "Uploading template to new project repository second time")
-	if err := uploadProjectRepository(botClient, remoteName); err != nil {
-		msgs = append(msgs, fmt.Sprintf("Upload failed: %s", err.Error()))
-		return msgs, err
-	}
 
-	
 	orgTeams, err := botClient.ListTeams(orgName)
 	if err != nil {
 		msgs = append(msgs, fmt.Sprintf("Failed to list teams for org: %s", orgName))
