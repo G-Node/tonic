@@ -256,10 +256,9 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 		if err := createAndSetRemote(subname); err != nil {
 			return msgs, err
 		}
-		os.Chdir("..")
+		os.Chdir(localRepoPath)
 		// Change the gitmodules information to link to the new repositories
 		// function should be git submodule set-url [oldpath = smName] [new URL = gitaddress + orgName+strings.ReplaceAll(smName, "/", "_")], loop over submodules, but run in parent folder
-		os.Chdir("..")
 		git.Command("submodule", "set-url", smName, lpconfig.GIN.Web+"/"+orgName+"/"+subname)
 	}
 
@@ -272,6 +271,8 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 	if stdout, stderr, err := addlcCmd.OutputError(); err != nil {
 		msgs = append(msgs, fmt.Sprintf("Failed to init labcommons: %s - %s", string(stdout), string(stderr)))
 		return msgs, err
+	} else {
+	  msgs = append(msgs,"submodule added without error ?")
 	}
 	
 	// Push
@@ -288,7 +289,7 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 			msgs = append(msgs, fmt.Sprintf("Upload failed: %s", err.Error()))
 			return msgs, err
 		}
-		os.Chdir("..")
+		os.Chdir(localRepoPath)
 	}
 
 
