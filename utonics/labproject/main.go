@@ -259,7 +259,9 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 		os.Chdir(localRepoPath)
 		// Change the gitmodules information to link to the new repositories
 		// function should be git submodule set-url [oldpath = smName] [new URL = gitaddress + orgName+strings.ReplaceAll(smName, "/", "_")], loop over submodules, but run in parent folder
-		git.Command("submodule", "set-url", smName, lpconfig.GIN.Web+"/"+orgName+"/"+subname)
+	
+	git.Command("submodule", "set-url", smName, lpconfig.GIN.Web+"/"+orgName+"/"+subname)
+	msgs = append(msgs, fmt.Sprintf("change" , smName, "using", lpconfig.GIN.Web+"/"+orgName+"/"+subname ))
 	}
 
 // Clone labcommons submodules
@@ -274,6 +276,11 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 	} else {
 	  msgs = append(msgs,"submodule added without error ?")
 	}
+	
+	// commit changes
+	msgs = append(msgs, "commiting changes to repository")
+	git.Commit ("tonic initialisation")
+	
 	
 	// Push
 	msgs = append(msgs, "Uploading template to new project repository")
