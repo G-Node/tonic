@@ -444,6 +444,8 @@ func readConfig(filename string) *labProjectConfig {
 }
 
 func uploadProjectRepository(botClient *worker.Client, remote string) error {
+	// Set local git config
+	git.SetGitUser(botClient.GIN.Username, botClient.GIN.Username+"@tonic")
 	uploadchan := make(chan git.RepoFileStatus)
 	go botClient.GIN.Upload([]string{}, []string{remote}, uploadchan)
 	for stat := range uploadchan {
