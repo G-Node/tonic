@@ -250,13 +250,35 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 		msgs = append(msgs, fmt.Sprintf("Failed to parse .gitmodules: %v", err.Error()))
 		return msgs, err
 	}
+
+	newSubmodules := make(map[string]*module, len(submodules))
 	for smName, submodule := range submodules {
 		os.Chdir(submodule.path)
-		smName = strings.ReplaceAll(smName, "/", "_")
+		smName = strings.ReplaceAll(smName, "/", "_") // don't allow / in submodule names
 		if err := createAndSetRemote(project + "." + smName); err != nil {
 			return msgs, err
 		}
-		os.Chdir("..")
+		// use relative URLs
+		url := fmt.Sprintf("../%s.%s", project, smName)
+		newSubmodules[smName] = &module{
+			path:   submodule.path,
+			url:    url,
+			branch: submodule.branch,
+		}
+		os.Chdir(localRepoPath)
+	}
+
+	// Write back updated .gitmodules file
+	msgs = append(msgs, "Updating .gitmodules configuration")
+	if err := writeGitModules(localRepoPath, newSubmodules); err != nil {
+		msgs = append(msgs, fmt.Sprintf("Failed to write .gitmodules file: %s", err.Error()))
+		return msgs, err
+	}
+
+	// Commit changes (update .gitmodules)
+	if err := commit(botClient, "Configure submodules"); err != nil {
+		msgs = append(msgs, fmt.Sprintf("Failed to commit .gitmodules changes: %s", err.Error()))
+		return msgs, err
 	}
 
 	// Push
@@ -443,9 +465,28 @@ func readConfig(filename string) *labProjectConfig {
 	return config
 }
 
+func commit(botClient *worker.Client, msg string) error {
+	// Set local git config
+	if err := git.SetGitUser(botClient.GIN.Username, botClient.GIN.Username+"@tonic"); err != nil {
+		return err
+	}
+	addchan := make(chan git.RepoFileStatus)
+	go git.Add([]string{".gitmodules"}, addchan)
+	for stat := range addchan {
+		log.Print(stat)
+		if stat.Err != nil {
+			return stat.Err
+		}
+	}
+	return git.Commit(msg)
+}
+
 func uploadProjectRepository(botClient *worker.Client, remote string) error {
 	// Set local git config
-	git.SetGitUser(botClient.GIN.Username, botClient.GIN.Username+"@tonic")
+	if err := git.SetGitUser(botClient.GIN.Username, botClient.GIN.Username+"@tonic"); err != nil {
+		return err
+	}
+
 	uploadchan := make(chan git.RepoFileStatus)
 	go botClient.GIN.Upload([]string{}, []string{remote}, uploadchan)
 	for stat := range uploadchan {
@@ -499,4 +540,27 @@ func parseGitModules(repoPath string) (map[string]*module, error) {
 		}
 	}
 	return modules, nil
+}
+
+// writeGitModules writes back the .gitmodules file.
+func writeGitModules(repoPath string, modules map[string]*module) error {
+	gmFilePath := filepath.Join(repoPath, ".gitmodules")
+	gitmodulesFile, err := os.Create(gmFilePath)
+	if err != nil {
+		return err
+	}
+
+	for smName, submodule := range modules {
+		headerLine := fmt.Sprintf("[submodule %q]\n", smName)
+		pathLine := fmt.Sprintf("\tpath = %s\n", submodule.path)
+		urlLine := fmt.Sprintf("\turl = %s\n", submodule.url)
+		branchLine := ""
+		if submodule.branch != "" { // optional
+			branchLine = fmt.Sprintf("\tbranch = %s\n", submodule.branch)
+		}
+		if _, err := gitmodulesFile.WriteString(headerLine + pathLine + urlLine + branchLine); err != nil {
+			return err
+		}
+	}
+	return nil
 }
