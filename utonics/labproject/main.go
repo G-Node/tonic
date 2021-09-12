@@ -242,7 +242,7 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 		fmt.Printf(string(stdout))
 		fmt.Printf(string(stderr))
 	}
-	submoduleForEach("git", "checkout", "master")
+	submoduleForEach("git", "checkout", "master") // TODO: find default branch instead
 	submoduleForEach("git", "pull")
 
 	submodules, err := parseGitModules(".")
@@ -458,11 +458,12 @@ func uploadProjectRepository(botClient *worker.Client, remote string) error {
 }
 
 type module struct {
-	path string
-	url  string
+	path   string
+	url    string
+	branch string
 }
 
-// parseSubmodules reads .gitmodules and returns a map of the configured //
+// parseGitModules reads .gitmodules and returns a map of the configured
 // submodules with their URLs and paths.
 func parseGitModules(repoPath string) (map[string]*module, error) {
 	gmFilePath := filepath.Join(repoPath, ".gitmodules")
@@ -480,6 +481,7 @@ func parseGitModules(repoPath string) (map[string]*module, error) {
 	nameRE := regexp.MustCompile(`\[submodule "(.*)"\]`)
 	pathRE := regexp.MustCompile(`path = (.*)`)
 	urlRE := regexp.MustCompile(`url = (.*)`)
+	branchRE := regexp.MustCompile(`branch = (.*)`)
 	for _, line := range lines {
 		if match := nameRE.FindSubmatch(line); match != nil {
 			name := string(match[1])
@@ -491,6 +493,9 @@ func parseGitModules(repoPath string) (map[string]*module, error) {
 		} else if match := urlRE.FindSubmatch(line); match != nil {
 			url := string(match[1])
 			modules[curname].url = url
+		} else if match := branchRE.FindSubmatch(line); match != nil {
+			branch := string(match[1])
+			modules[curname].branch = branch
 		}
 	}
 	return modules, nil
