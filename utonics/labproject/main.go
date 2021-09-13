@@ -242,53 +242,53 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 		fmt.Printf(string(stdout))
 		fmt.Printf(string(stderr))
 	}
-	submoduleForEach("git", "checkout", "master")
+	submoduleForEach("git", "checkout", "master") // TODO: find default branch instead
 	submoduleForEach("git", "pull")
+	submoduleForEach("gin", "init")
 
 	submodules, err := parseGitModules(".")
 	if err != nil {
 		msgs = append(msgs, fmt.Sprintf("Failed to parse .gitmodules: %v", err.Error()))
 		return msgs, err
 	}
+
+	newSubmodules := make(map[string]*module, len(submodules))
 	for smName, submodule := range submodules {
 		os.Chdir(submodule.path)
-		subname := project + "." + strings.ReplaceAll(smName, "/", "_")
-		if err := createAndSetRemote(subname); err != nil {
+		smName = strings.ReplaceAll(smName, "/", "_") // don't allow / in submodule names
+		if err := createAndSetRemote(project + "." + smName); err != nil {
 			return msgs, err
 		}
+		// use relative URLs
+		url := fmt.Sprintf("../%s.%s", project, smName)
+		newSubmodules[smName] = &module{
+			path:   submodule.path,
+			url:    url,
+			branch: submodule.branch,
+		}
 		os.Chdir(localRepoPath)
-		// Change the gitmodules information to link to the new repositories
-		// function should be git submodule set-url [oldpath = smName] [new URL = gitaddress + orgName+strings.ReplaceAll(smName, "/", "_")], loop over submodules, but run in parent folder
-	
-	git.Command("submodule", "set-url", smName, lpconfig.GIN.Web+"/"+orgName+"/"+subname)
-	msgs = append(msgs, fmt.Sprintf("change" , smName, "using", lpconfig.GIN.Web+"/"+orgName+"/"+subname ))
 	}
 
-// Clone labcommons submodules
-
-	msgs = append(msgs, "Adding labcommons t4")
-	str := []string{lpconfig.GIN.Web, "/", orgName, "/labcommons"}
-	labcad := strings.Join(str, "")
-	addlcCmd := git.Command("submodule", "add", labcad, "labcommons")
-	if stdout, stderr, err := addlcCmd.OutputError(); err != nil {
-		msgs = append(msgs, fmt.Sprintf("Failed to init labcommons: %s - %s", string(stdout), string(stderr)))
+	// Write back updated .gitmodules file
+	msgs = append(msgs, "Updating .gitmodules configuration")
+	if err := writeGitModules(localRepoPath, newSubmodules); err != nil {
+		msgs = append(msgs, fmt.Sprintf("Failed to write .gitmodules file: %s", err.Error()))
 		return msgs, err
-	} else {
-	  msgs = append(msgs,"submodule added without error ?")
 	}
-	
-	// commit changes
-	msgs = append(msgs, "commiting changes to repository")
-	git.Commit ("tonic initialisation")
-	
-	
+
+	// Commit changes (update .gitmodules)
+	if err := commit(botClient, "Configure submodules"); err != nil {
+		msgs = append(msgs, fmt.Sprintf("Failed to commit .gitmodules changes: %s", err.Error()))
+		return msgs, err
+	}
+
 	// Push
 	msgs = append(msgs, "Uploading template to new project repository")
 	if err := uploadProjectRepository(botClient, remoteName); err != nil {
 		msgs = append(msgs, fmt.Sprintf("Upload failed: %s", err.Error()))
 		return msgs, err
 	}
-
+	
 	for _, submodule := range submodules {
 		os.Chdir(submodule.path)
 		msgs = append(msgs, "Uploading submodule to new project repository")
@@ -296,9 +296,8 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 			msgs = append(msgs, fmt.Sprintf("Upload failed: %s", err.Error()))
 			return msgs, err
 		}
-		os.Chdir(localRepoPath)
+		os.Chdir("..")
 	}
-
 
 	orgTeams, err := botClient.ListTeams(orgName)
 	if err != nil {
@@ -467,7 +466,28 @@ func readConfig(filename string) *labProjectConfig {
 	return config
 }
 
+func commit(botClient *worker.Client, msg string) error {
+	// Set local git config
+	if err := git.SetGitUser(botClient.GIN.Username, botClient.GIN.Username+"@tonic"); err != nil {
+		return err
+	}
+	addchan := make(chan git.RepoFileStatus)
+	go git.Add([]string{".gitmodules"}, addchan)
+	for stat := range addchan {
+		log.Print(stat)
+		if stat.Err != nil {
+			return stat.Err
+		}
+	}
+	return git.Commit(msg)
+}
+
 func uploadProjectRepository(botClient *worker.Client, remote string) error {
+	// Set local git config
+	if err := git.SetGitUser(botClient.GIN.Username, botClient.GIN.Username+"@tonic"); err != nil {
+		return err
+	}
+
 	uploadchan := make(chan git.RepoFileStatus)
 	go botClient.GIN.Upload([]string{}, []string{remote}, uploadchan)
 	for stat := range uploadchan {
@@ -480,11 +500,12 @@ func uploadProjectRepository(botClient *worker.Client, remote string) error {
 }
 
 type module struct {
-	path string
-	url  string
+	path   string
+	url    string
+	branch string
 }
 
-// parseSubmodules reads .gitmodules and returns a map of the configured //
+// parseGitModules reads .gitmodules and returns a map of the configured
 // submodules with their URLs and paths.
 func parseGitModules(repoPath string) (map[string]*module, error) {
 	gmFilePath := filepath.Join(repoPath, ".gitmodules")
@@ -502,6 +523,7 @@ func parseGitModules(repoPath string) (map[string]*module, error) {
 	nameRE := regexp.MustCompile(`\[submodule "(.*)"\]`)
 	pathRE := regexp.MustCompile(`path = (.*)`)
 	urlRE := regexp.MustCompile(`url = (.*)`)
+	branchRE := regexp.MustCompile(`branch = (.*)`)
 	for _, line := range lines {
 		if match := nameRE.FindSubmatch(line); match != nil {
 			name := string(match[1])
@@ -513,7 +535,33 @@ func parseGitModules(repoPath string) (map[string]*module, error) {
 		} else if match := urlRE.FindSubmatch(line); match != nil {
 			url := string(match[1])
 			modules[curname].url = url
+		} else if match := branchRE.FindSubmatch(line); match != nil {
+			branch := string(match[1])
+			modules[curname].branch = branch
 		}
 	}
 	return modules, nil
+}
+
+// writeGitModules writes back the .gitmodules file.
+func writeGitModules(repoPath string, modules map[string]*module) error {
+	gmFilePath := filepath.Join(repoPath, ".gitmodules")
+	gitmodulesFile, err := os.Create(gmFilePath)
+	if err != nil {
+		return err
+	}
+
+	for smName, submodule := range modules {
+		headerLine := fmt.Sprintf("[submodule %q]\n", smName)
+		pathLine := fmt.Sprintf("\tpath = %s\n", submodule.path)
+		urlLine := fmt.Sprintf("\turl = %s\n", submodule.url)
+		branchLine := ""
+		if submodule.branch != "" { // optional
+			branchLine = fmt.Sprintf("\tbranch = %s\n", submodule.branch)
+		}
+		if _, err := gitmodulesFile.WriteString(headerLine + pathLine + urlLine + branchLine); err != nil {
+			return err
+		}
+	}
+	return nil
 }
