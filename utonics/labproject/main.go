@@ -411,7 +411,7 @@ func getAvailableOrgsAndTeams(botClient, userClient *worker.Client) (map[string]
 }
 
 func readConfig(filename string) *labProjectConfig {
-	confFile, err := dOpen(filename)
+	confFile, err := os.Open(filename)
 	if err != nil {
 		log.Fatal(err)
 	}
