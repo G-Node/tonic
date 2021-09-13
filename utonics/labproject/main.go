@@ -244,7 +244,8 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 	}
 	submoduleForEach("git", "checkout", "master") // TODO: find default branch instead
 	submoduleForEach("git", "pull")
-
+	submoduleForEach("gin", "init")
+	
 	submodules, err := parseGitModules(".")
 	if err != nil {
 		msgs = append(msgs, fmt.Sprintf("Failed to parse .gitmodules: %v", err.Error()))
@@ -295,7 +296,7 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 			msgs = append(msgs, fmt.Sprintf("Upload failed: %s", err.Error()))
 			return msgs, err
 		}
-		os.Chdir("..")
+		os.Chdir(localRepoPath)
 	}
 
 	orgTeams, err := botClient.ListTeams(orgName)
@@ -347,7 +348,7 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 		return msgs, err
 	}
 	for smName := range submodules {
-		repoName := project + "." + smName
+		repoName := project + "." + strings.ReplaceAll(smName, "/", "_")
 		if err := botClient.AdminAddTeamRepository(team.ID, repoName); err != nil {
 			msgs = append(msgs, fmt.Sprintf("Failed to add repository %q to team: %s", repoName, err.Error()))
 			return msgs, err
@@ -410,7 +411,7 @@ func getAvailableOrgsAndTeams(botClient, userClient *worker.Client) (map[string]
 }
 
 func readConfig(filename string) *labProjectConfig {
-	confFile, err := os.Open(filename)
+	confFile, err := dOpen(filename)
 	if err != nil {
 		log.Fatal(err)
 	}
