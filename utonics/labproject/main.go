@@ -214,7 +214,7 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 		return nil
 	}
 
-	if err := createAndSetRemote(project); err != nil {
+	if err := createAndSetRemote(project + ".main"); err != nil {
 		return msgs, err
 	}
 
@@ -245,7 +245,6 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 	submoduleForEach("git", "checkout", "master") // TODO: find default branch instead
 	submoduleForEach("git", "pull")
 	//submoduleForEach("gin", "init") // TODO: make this work !
-  msgs = append(msgs, "submodule content cannot be initialised and therefore pushed, yet. please initialise with synchronisation script.")
   
 	submodules, err := parseGitModules(".")
 	if err != nil {
@@ -290,15 +289,17 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 		return msgs, err
 	}
 	
-	for _, submodule := range submodules {
-		os.Chdir(submodule.path)
-		msgs = append(msgs, "Uploading submodule to new project repository")
-		if err := uploadProjectRepository(botClient, remoteName); err != nil {
-			msgs = append(msgs, fmt.Sprintf("Upload failed: %s", err.Error()))
-			return msgs, err
-		}
-		os.Chdir(localRepoPath)
-	}
+	  msgs = append(msgs, "submodule content cannot be initialised and therefore pushed, yet. please initialise with synchronisation script.")
+
+//for _, submodule := range submodules {
+//		os.Chdir(submodule.path)
+//		msgs = append(msgs, "Uploading submodule to new project repository")
+//		if err := uploadProjectRepository(botClient, remoteName); err != nil {
+//			msgs = append(msgs, fmt.Sprintf("Upload failed: %s", err.Error()))
+//			return msgs, err
+//		}
+//		os.Chdir(localRepoPath)
+//	}
 
 	orgTeams, err := botClient.ListTeams(orgName)
 	if err != nil {
@@ -343,8 +344,8 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 	}
 
 	// Add Repositories to Team
-	msgs = append(msgs, fmt.Sprintf("Adding repository %q to team %q", project, team.Name))
-	if err := botClient.AdminAddTeamRepository(team.ID, project); err != nil {
+	msgs = append(msgs, fmt.Sprintf("Adding repositories %q to team %q", (project + ".main and others"), team.Name))
+	if err := botClient.AdminAddTeamRepository(team.ID, (project + ".main")); err != nil {
 		msgs = append(msgs, fmt.Sprintf("Failed to add repository %q to team: %s", project, err.Error()))
 		return msgs, err
 	}
