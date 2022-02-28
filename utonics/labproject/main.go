@@ -244,8 +244,9 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 	}
 	submoduleForEach("git", "checkout", "master") // TODO: find default branch instead
 	submoduleForEach("git", "pull")
-	submoduleForEach("gin", "init")
-
+	//submoduleForEach("gin", "init") // TODO: make this work !
+  msgs = append(msgs, "submodule content cannot be initialised and therefore pushed, yet. please initialise with synchronisation script.")
+  
 	submodules, err := parseGitModules(".")
 	if err != nil {
 		msgs = append(msgs, fmt.Sprintf("Failed to parse .gitmodules: %v", err.Error()))
@@ -296,7 +297,7 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 			msgs = append(msgs, fmt.Sprintf("Upload failed: %s", err.Error()))
 			return msgs, err
 		}
-		os.Chdir("..")
+		os.Chdir(localRepoPath)
 	}
 
 	orgTeams, err := botClient.ListTeams(orgName)
