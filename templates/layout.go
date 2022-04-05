@@ -15,7 +15,7 @@ var Layout = `
 		<link rel="stylesheet" href="/assets/semantic-2.3.1.min.css">
 		<link rel="stylesheet" href="/assets/gogs.css">
 		<link rel="stylesheet" href="/assets/custom.css">
-		<title>Project creator</title>
+		<title>TONIC Project administration</title>
 		<meta name="twitter:card" content="summary" />
 		<meta name="twitter:site" content="@gnode" />
 		<meta name="twitter:title" content="GIN Valid"/>
