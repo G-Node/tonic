@@ -31,29 +31,26 @@ var lpconfig *labProjectConfig
 
 func main() {
 	elems := []form.Element{
-	{
-		ID:       "laborg",
-		Label:    "Lab organisation",
-		Name:     "organisation",
-		Type:     form.Select,
-		Required: true,
-	},
+		{
+			ID:       "laborg",
+			Label:    "Lab organisation",
+			Name:     "organisation",
+			Type:     form.Select,
+			Required: true,
+		},
 		{
 			ID:          "teamname",
 			Label:       "Team name",
 			Name:        "team",
-			Description: "Name of the team the project will belong to. We are working on getting a form to choose from, but for now, please type carefully.",
-			Type:        form.TextInput,
+			Description: "Name of the team the project will belong to.",
 			Required:    true,
+			Type:        form.TextInput,
 		},
-		
-
-		
 		{
 			ID:          "projname",
 			Label:       "Project name",
-			Name:        "Module name",
-			Description: "repo will be name team.module",
+			Name:        "project",
+			Description: "Must not already exist",
 			Required:    true,
 			Type:        form.TextInput,
 		},
@@ -67,12 +64,12 @@ func main() {
 		},
 	}
 	page1 := form.Page{
-		Description: "This will create a new module to be included in a project parent repository.",
+		Description: "Creating a new project will create a new set of repositories based on the lab template and a team for granting access to all project members.",
 		Elements:    elems,
 	}
 	lpform := form.Form{
 		Pages:       []form.Page{page1},
-		Name:        "Add module to one project",
+		Name:        "module addition",
 		Description: "",
 	}
 	lpconfig = readConfig("labproject.json")
@@ -114,11 +111,17 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 	orgName := values["organisation"][0] // required
 	project := values["project"][0]      // required
 	title := ""
-	teamName := values["team"][0]      // required
+	teamName := ""
 	if len(values["title"]) > 0 {
 		title = values["title"][0]
 	}
-	
+	if len(values["team"]) > 0 {
+		teamName = values["team"][0]
+	}
+	if teamName == "" {
+		// Team name not specified; use project name
+		teamName = project
+	}
 
 	msgs := make([]string, 0, 10)
 
