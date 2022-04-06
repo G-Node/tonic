@@ -42,7 +42,7 @@ func main() {
 			ID:          "teamname",
 			Label:       "Team name",
 			Name:        "team",
-			Description: "Name of the team the project will belong to.",
+			Description: "Name of the team the module will belong to, please name carefully to avoid creating a new team.",
 			Required:    true,
 			Type:        form.TextInput,
 		},
@@ -50,7 +50,7 @@ func main() {
 			ID:          "projname",
 			Label:       "Project name",
 			Name:        "project",
-			Description: "Must not already exist",
+			Description: "you may want to use <teamname.XXX> as a name to fit other submodule of the parent repository (if it corresponds).",
 			Required:    true,
 			Type:        form.TextInput,
 		},
@@ -58,7 +58,7 @@ func main() {
 			ID:          "title",
 			Label:       "Title",
 			Name:        "title",
-			Description: "Project title",
+			Description: "Project description",
 			Type:        form.TextArea,
 			Required:    false,
 		},
@@ -179,16 +179,17 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 		msgs = append(msgs, fmt.Sprintf("Failed to change to newly cloned path %q: %s", localRepoPath, err.Error()))
 		return msgs, err
 	}
-
+  // set option, nb description has additional info for adding module in parent repo.
 	remoteName := "newproject"
 	createAndSetRemote := func(name string) error {
 		repoOpt := gogs.CreateRepoOption{
 			Name:        name,
-			Description: title,
+			Description: title, 
 			Private:     true,
 			AutoInit:    false,
 			Readme:      "Default",
 		}
+
 		// Create project repository
 		msgs = append(msgs, fmt.Sprintf("Creating %s/%s", orgName, repoOpt.Name))
 		repo, err := botClient.CreateOrgRepo(orgName, repoOpt)
