@@ -180,11 +180,12 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 		return msgs, err
 	}
   // set option, nb description has additional info for adding module in parent repo.
+	title2 := fmt.Sprintf("%s /n use this command to add the module in parent repo: git submodule add %s%s ./03_data/%s (you can change that last path indicated here as an example)", title, orgName, project,project )
 	remoteName := "newproject"
 	createAndSetRemote := func(name string) error {
 		repoOpt := gogs.CreateRepoOption{
 			Name:        name,
-			Description: title, 
+			Description: title2, 
 			Private:     true,
 			AutoInit:    false,
 			Readme:      "Default",
@@ -215,7 +216,7 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 		return nil
 	}
 
-	if err := createAndSetRemote(project + ".main"); err != nil {
+	if err := createAndSetRemote(project); err != nil {
 		return msgs, err
 	}
 
@@ -346,7 +347,7 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 
 	// Add Repositories to Team
 	msgs = append(msgs, fmt.Sprintf("Adding repositories %q to team %q", (project + ".main and others"), team.Name))
-	if err := botClient.AdminAddTeamRepository(team.ID, (project + ".main")); err != nil {
+	if err := botClient.AdminAddTeamRepository(team.ID, (project)); err != nil {
 		msgs = append(msgs, fmt.Sprintf("Failed to add repository %q to team: %s", project, err.Error()))
 		return msgs, err
 	}
