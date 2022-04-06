@@ -180,7 +180,8 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 		return msgs, err
 	}
   // set option, nb description has additional info for adding module in parent repo.
-	title2 := fmt.Sprintf("%s /n use this command to add the module in parent repo: git submodule add %s%s ./03_data/%s (you can change that last path indicated here as an example)", title, orgName, project,project )
+	gitaddress := "ssh://git@gindata.biologie.hu-berlin.de:10022"
+	title2 := fmt.Sprintf("%s  \n use this command to add the module in parent repo: \n git submodule add %s%s%s ./03_data/%s \n (you can change that last path indicated here as an example)", title, gitaddress,orgName, project,project )
 	remoteName := "newproject"
 	createAndSetRemote := func(name string) error {
 		repoOpt := gogs.CreateRepoOption{
