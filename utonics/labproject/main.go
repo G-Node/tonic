@@ -321,7 +321,7 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 		// Create Team
 		// TODO: Use non admin command when it becomes available
 		msgs = append(msgs, fmt.Sprintf("Creating team %s/%s", orgName, project))
-		team, err = botClient.AdminCreateTeam(orgName, gogs.CreateTeamOption{Name: teamName, Description: title, Permission: "write"})
+		team, err = botClient.AdminCreateTeam(orgName, gogs.CreateTeamOption{Name: teamName, Description: title, Permission: "admin"})
 		if err != nil {
 			msgs = append(msgs, fmt.Sprintf("Failed to create team: %s", err.Error()))
 			return msgs, err
