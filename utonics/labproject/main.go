@@ -214,7 +214,8 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 		return nil
 	}
 
-	if err := createAndSetRemote(project + ".main"); err != nil {
+	mainRepo := fmt.Sprintf("%s.main", project)
+	if err := createAndSetRemote(mainRepo); err != nil {
 		return msgs, err
 	}
 
@@ -290,6 +291,7 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 
 	msgs = append(msgs, "submodule content cannot be initialised and therefore pushed, yet. please initialise with synchronisation script.")
 
+	parentURL := fmt.Sprintf("%s/%s/%s", botClient.GIN.WebAddress(), orgName, mainRepo)
 	for _, submodule := range submodules {
 		os.Chdir(submodule.path)
 		msgs = append(msgs, "Initialising submodule")
@@ -297,6 +299,19 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 			msgs = append(msgs, fmt.Sprintf("Init failed: %s", err.Error()))
 			return msgs, err
 		}
+
+		msgs = append(msgs, "Writing link to parent in submodule README(s)")
+		if err := linkToParent(parentURL); err != nil {
+			msgs = append(msgs, fmt.Sprintf("Init failed: %s", err.Error()))
+			return msgs, err
+		}
+
+		// Commit changes (update README(s) in submodule)
+		if err := commit(botClient, "Add parent repo URLs to README files"); err != nil {
+			msgs = append(msgs, fmt.Sprintf("Failed to commit README changes: %s", err.Error()))
+			return msgs, err
+		}
+
 		msgs = append(msgs, "Uploading submodule to new project repository")
 		if err := uploadProjectRepository(botClient, remoteName); err != nil {
 			msgs = append(msgs, fmt.Sprintf("Upload failed: %s", err.Error()))
@@ -348,8 +363,8 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 	}
 
 	// Add Repositories to Team
-	msgs = append(msgs, fmt.Sprintf("Adding repositories %q to team %q", (project+".main and others"), team.Name))
-	if err := botClient.AdminAddTeamRepository(team.ID, project+".main"); err != nil {
+	msgs = append(msgs, fmt.Sprintf("Adding repositories %q to team %q", mainRepo+" and others", team.Name))
+	if err := botClient.AdminAddTeamRepository(team.ID, mainRepo); err != nil {
 		msgs = append(msgs, fmt.Sprintf("Failed to add repository %q to team: %s", project, err.Error()))
 		return msgs, err
 	}
@@ -495,6 +510,36 @@ func initSubmodule(botClient *worker.Client) error {
 	}
 
 	return botClient.GIN.InitDir(false)
+}
+
+func linkToParent(parentURL string) error {
+	// Add a link to the parent repository in the submodule's README (glob for all files starting with README)
+	files, err := os.ReadDir(".")
+	if err != nil {
+		return err
+	}
+
+	parentText := fmt.Sprintf("\n\n%s is the parent directory\n\n", parentURL)
+	for _, file := range files {
+		if file.IsDir() {
+			// ignore
+			continue
+		}
+
+		if strings.HasPrefix(file.Name(), "README") {
+			// append parent name
+			readme, err := os.OpenFile(file.Name(), os.O_APPEND|os.O_WRONLY, 0644)
+			if err != nil {
+				return err
+			}
+			defer readme.Close()
+
+			if _, err := readme.WriteString(parentText); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func uploadProjectRepository(botClient *worker.Client, remote string) error {
