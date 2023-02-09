@@ -214,7 +214,7 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 		return nil
 	}
 
-	if err := createAndSetRemote(project); err != nil {
+	if err := createAndSetRemote(project + ".main"); err != nil {
 		return msgs, err
 	}
 
@@ -288,6 +288,8 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 		return msgs, err
 	}
 
+	msgs = append(msgs, "submodule content cannot be initialised and therefore pushed, yet. please initialise with synchronisation script.")
+
 	for _, submodule := range submodules {
 		os.Chdir(submodule.path)
 		msgs = append(msgs, "Uploading submodule to new project repository")
@@ -295,7 +297,7 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 			msgs = append(msgs, fmt.Sprintf("Upload failed: %s", err.Error()))
 			return msgs, err
 		}
-		os.Chdir("..")
+		os.Chdir(localRepoPath)
 	}
 
 	orgTeams, err := botClient.ListTeams(orgName)
@@ -318,7 +320,7 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 		// Create Team
 		// TODO: Use non admin command when it becomes available
 		msgs = append(msgs, fmt.Sprintf("Creating team %s/%s", orgName, project))
-		team, err = botClient.AdminCreateTeam(orgName, gogs.CreateTeamOption{Name: teamName, Description: title, Permission: "write"})
+		team, err = botClient.AdminCreateTeam(orgName, gogs.CreateTeamOption{Name: teamName, Description: title, Permission: "admin"})
 		if err != nil {
 			msgs = append(msgs, fmt.Sprintf("Failed to create team: %s", err.Error()))
 			return msgs, err
@@ -341,13 +343,13 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 	}
 
 	// Add Repositories to Team
-	msgs = append(msgs, fmt.Sprintf("Adding repository %q to team %q", project, team.Name))
-	if err := botClient.AdminAddTeamRepository(team.ID, project); err != nil {
+	msgs = append(msgs, fmt.Sprintf("Adding repositories %q to team %q", (project+".main and others"), team.Name))
+	if err := botClient.AdminAddTeamRepository(team.ID, project+".main"); err != nil {
 		msgs = append(msgs, fmt.Sprintf("Failed to add repository %q to team: %s", project, err.Error()))
 		return msgs, err
 	}
 	for smName := range submodules {
-		repoName := project + "." + smName
+		repoName := project + "." + strings.ReplaceAll(smName, "/", "_")
 		if err := botClient.AdminAddTeamRepository(team.ID, repoName); err != nil {
 			msgs = append(msgs, fmt.Sprintf("Failed to add repository %q to team: %s", repoName, err.Error()))
 			return msgs, err
