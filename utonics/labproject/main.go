@@ -292,6 +292,11 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 
 	for _, submodule := range submodules {
 		os.Chdir(submodule.path)
+		msgs = append(msgs, "Initialising submodule")
+		if err := initSubmodule(botClient); err != nil {
+			msgs = append(msgs, fmt.Sprintf("Init failed: %s", err.Error()))
+			return msgs, err
+		}
 		msgs = append(msgs, "Uploading submodule to new project repository")
 		if err := uploadProjectRepository(botClient, remoteName); err != nil {
 			msgs = append(msgs, fmt.Sprintf("Upload failed: %s", err.Error()))
@@ -481,6 +486,15 @@ func commit(botClient *worker.Client, msg string) error {
 		}
 	}
 	return git.Commit(msg)
+}
+
+func initSubmodule(botClient *worker.Client) error {
+	// Set local git config
+	if err := git.SetGitUser(botClient.GIN.Username, botClient.GIN.Username+"@tonic"); err != nil {
+		return err
+	}
+
+	return botClient.GIN.InitDir(false)
 }
 
 func uploadProjectRepository(botClient *worker.Client, remote string) error {
