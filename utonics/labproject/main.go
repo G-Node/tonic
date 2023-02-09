@@ -288,7 +288,7 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 	}
 
 	// Commit changes (update .gitmodules)
-	if err := commit(botClient, "Configure submodules"); err != nil {
+	if err := commit(botClient, []string{".gitmodules"}, "Configure submodules"); err != nil {
 		msgs = append(msgs, fmt.Sprintf("Failed to commit .gitmodules changes: %s", err.Error()))
 		return msgs, err
 	}
@@ -318,7 +318,7 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 		}
 
 		// Commit changes (update README(s) in submodule)
-		if err := commit(botClient, "Add parent repo URLs to README files"); err != nil {
+		if err := commit(botClient, []string{"."}, "Add parent repo URLs to README files"); err != nil {
 			msgs = append(msgs, fmt.Sprintf("Failed to commit README changes: %s", err.Error()))
 			return msgs, err
 		}
@@ -498,13 +498,13 @@ func readConfig(filename string) *labProjectConfig {
 	return config
 }
 
-func commit(botClient *worker.Client, msg string) error {
+func commit(botClient *worker.Client, paths []string, msg string) error {
 	// Set local git config
 	if err := git.SetGitUser(botClient.GIN.Username, botClient.GIN.Username+"@tonic"); err != nil {
 		return err
 	}
 	addchan := make(chan git.RepoFileStatus)
-	go git.Add([]string{".gitmodules"}, addchan)
+	go git.Add(paths, addchan)
 	for stat := range addchan {
 		log.Print(stat)
 		if stat.Err != nil {
