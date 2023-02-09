@@ -271,7 +271,7 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 
 	// Write back updated .gitmodules file
 	msgs = append(msgs, "Updating .gitmodules configuration")
-	if err := writeGitModules(localRepoPath, newSubmodules); err != nil {
+	if err := writeGitModules(localRepoPath, newSubmodules, nil); err != nil {
 		msgs = append(msgs, fmt.Sprintf("Failed to write .gitmodules file: %s", err.Error()))
 		return msgs, err
 	}
@@ -604,7 +604,7 @@ func parseGitModules(repoPath string) (map[string]*module, error) {
 }
 
 // writeGitModules writes back the .gitmodules file.
-func writeGitModules(repoPath string, modules map[string]*module) error {
+func writeGitModules(repoPath string, modules map[string]*module, common *module) error {
 	gmFilePath := filepath.Join(repoPath, ".gitmodules")
 	gitmodulesFile, err := os.Create(gmFilePath)
 	if err != nil {
@@ -612,16 +612,29 @@ func writeGitModules(repoPath string, modules map[string]*module) error {
 	}
 
 	for smName, submodule := range modules {
-		headerLine := fmt.Sprintf("[submodule %q]\n", smName)
-		pathLine := fmt.Sprintf("\tpath = %s\n", submodule.path)
-		urlLine := fmt.Sprintf("\turl = %s\n", submodule.url)
-		branchLine := ""
-		if submodule.branch != "" { // optional
-			branchLine = fmt.Sprintf("\tbranch = %s\n", submodule.branch)
+		if submodule != nil {
+			if _, err := gitmodulesFile.WriteString(composeModuleBlock(smName, *submodule)); err != nil {
+				return err
+			}
 		}
-		if _, err := gitmodulesFile.WriteString(headerLine + pathLine + urlLine + branchLine); err != nil {
+	}
+
+	if common != nil {
+		if _, err := gitmodulesFile.WriteString(composeModuleBlock("labcommon", *common)); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+func composeModuleBlock(name string, mod module) string {
+	headerLine := fmt.Sprintf("[submodule %q]\n", name)
+	pathLine := fmt.Sprintf("\tpath = %s\n", mod.path)
+	urlLine := fmt.Sprintf("\turl = %s\n", mod.url)
+	branchLine := ""
+	if mod.branch != "" { // optional
+		branchLine = fmt.Sprintf("\tbranch = %s\n", mod.branch)
+	}
+
+	return headerLine + pathLine + urlLine + branchLine
 }
