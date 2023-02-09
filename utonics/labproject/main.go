@@ -269,9 +269,20 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 		os.Chdir(localRepoPath)
 	}
 
+	// check if common submodule exists
+	var common *module
+	repoinfo, err := botClient.GetRepo(orgName, "labcommon")
+	if err != nil {
+		common = &module{
+			path:   "labcommon",
+			url:    "../labcommon",
+			branch: repoinfo.DefaultBranch,
+		}
+	}
+
 	// Write back updated .gitmodules file
 	msgs = append(msgs, "Updating .gitmodules configuration")
-	if err := writeGitModules(localRepoPath, newSubmodules, nil); err != nil {
+	if err := writeGitModules(localRepoPath, newSubmodules, common); err != nil {
 		msgs = append(msgs, fmt.Sprintf("Failed to write .gitmodules file: %s", err.Error()))
 		return msgs, err
 	}
