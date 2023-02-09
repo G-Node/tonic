@@ -271,13 +271,17 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 
 	// check if common submodule exists
 	var common *module
-	repoinfo, err := botClient.GetRepo(orgName, "labcommon")
-	if err != nil {
+	commonsName := "labcommons"
+	repoinfo, err := botClient.GetRepo(orgName, commonsName)
+	if err == nil {
 		common = &module{
-			path:   "labcommon",
-			url:    "../labcommon",
+			path:   commonsName,
+			url:    fmt.Sprintf("../%s", commonsName),
 			branch: repoinfo.DefaultBranch,
 		}
+		msgs = append(msgs, fmt.Sprintf("Adding common submodule %q", commonsName))
+	} else {
+		msgs = append(msgs, fmt.Sprintf("Common repository %s/%s not found: %s", orgName, commonsName, err.Error()))
 	}
 
 	// Write back updated .gitmodules file
@@ -631,7 +635,7 @@ func writeGitModules(repoPath string, modules map[string]*module, common *module
 	}
 
 	if common != nil {
-		if _, err := gitmodulesFile.WriteString(composeModuleBlock("labcommon", *common)); err != nil {
+		if _, err := gitmodulesFile.WriteString(composeModuleBlock("common", *common)); err != nil {
 			return err
 		}
 	}
