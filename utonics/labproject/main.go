@@ -269,20 +269,20 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 		os.Chdir(localRepoPath)
 	}
 
-	// check if common submodule exists
-	var common *module
-	commonsName := "labcommons"
-	repoinfo, err := botClient.GetRepo(orgName, commonsName)
-	if err == nil {
-		common = &module{
-			path:   commonsName,
-			url:    fmt.Sprintf("../%s", commonsName),
-			branch: repoinfo.DefaultBranch,
-		}
-		msgs = append(msgs, fmt.Sprintf("Adding common submodule %q", commonsName))
-	} else {
-		msgs = append(msgs, fmt.Sprintf("Common repository %s/%s not found: %s", orgName, commonsName, err.Error()))
-	}
+	//	// check if common submodule exists
+		//var common *module
+		//commonsName := "labcommons"
+	//	repoinfo, err := botClient.GetRepo(orgName, commonsName)
+	//	if err == nil {
+	//		common = &module{
+	//			path:   commonsName,
+	//			url:    fmt.Sprintf("../%s", commonsName),
+	//			branch: repoinfo.DefaultBranch,
+	//		}
+	//		msgs = append(msgs, fmt.Sprintf("Adding common submodule %q", commonsName))
+	//	} else {
+	//		msgs = append(msgs, fmt.Sprintf("Common repository %s/%s not found: %s", orgName, commonsName, err.Error()))
+	//	}
 
 	// Write back updated .gitmodules file
 	msgs = append(msgs, "Updating .gitmodules configuration")
@@ -291,20 +291,9 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 		return msgs, err
 	}
 
-	// Commit changes (update .gitmodules)
-	if err := commit(botClient, []string{".gitmodules"}, "Configure submodules"); err != nil {
-		msgs = append(msgs, fmt.Sprintf("Failed to commit .gitmodules changes: %s", err.Error()))
-		return msgs, err
-	}
+	
 
-	// Push
-	msgs = append(msgs, "Uploading template to new project repository")
-	if err := uploadProjectRepository(botClient, remoteName); err != nil {
-		msgs = append(msgs, fmt.Sprintf("Upload failed: %s", err.Error()))
-		return msgs, err
-	}
-
-	msgs = append(msgs, "submodule content cannot be initialised and therefore pushed, yet. please initialise with synchronisation script.")
+	// 	msgs = append(msgs, "submodule content cannot be initialised and therefore pushed, yet. please initialise with synchronisation script.")
 
 	parentURL := fmt.Sprintf("%s/%s/%s", botClient.GIN.WebAddress(), orgName, mainRepo)
 	for _, submodule := range submodules {
@@ -334,6 +323,33 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 		}
 		os.Chdir(localRepoPath)
 	}
+	
+	// Commit changes (update .gitmodules, gin commit equivalent)
+	if err := commit(botClient, []string{".gitmodules"}, "Configure submodules"); err != nil {
+		msgs = append(msgs, fmt.Sprintf("Failed to commit .gitmodules changes: %s", err.Error()))
+		return msgs, err
+	}
+	
+	//	updCmd := git.Command("submodule", "update")
+	//	if stdout, stderr, err := updCmd.OutputError(); err != nil {
+	//		msgs = append(msgs, fmt.Sprintf("Failed to update submodules (2): %s - %s", string(stdout), string(stderr)))
+	//		return msgs, err
+	//	}
+	
+	// Commit changes (update submodule to latest commit, git commit equivalent)
+	updCmdc := git.Command("commit . ", "-m 'commit latest subm version'")
+	if stdout, stderr, err := updCmdc.OutputError(); err != nil {
+		msgs = append(msgs, fmt.Sprintf("Failed to update parent repos: %s - %s", string(stdout), string(stderr)))
+		return msgs, err
+	}
+
+	// Push
+	msgs = append(msgs, "Uploading template to new project repository")
+	if err := uploadProjectRepository(botClient, remoteName); err != nil {
+		msgs = append(msgs, fmt.Sprintf("Upload failed: %s", err.Error()))
+		return msgs, err
+	}
+	
 
 	orgTeams, err := botClient.ListTeams(orgName)
 	if err != nil {
