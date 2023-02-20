@@ -356,6 +356,13 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 		return msgs, err
 	}
 
+	// Push
+	msgs = append(msgs, "Uploading template to new project repository")
+	if err := uploadProjectRepository(botClient, remoteName); err != nil {
+		msgs = append(msgs, fmt.Sprintf("Upload failed: %s", err.Error()))
+		return msgs, err
+	}
+
 	orgTeams, err := botClient.ListTeams(orgName)
 	if err != nil {
 		msgs = append(msgs, fmt.Sprintf("Failed to list teams for org: %s", orgName))
