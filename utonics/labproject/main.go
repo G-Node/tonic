@@ -313,7 +313,6 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 		}
 	}
 
-	msgs = append(msgs, "submodule content cannot be initialised and therefore pushed, yet. please initialise with synchronisation script.")
 
 	submodulePaths := make([]string, 0, len(submodules))
 	parentURL := fmt.Sprintf("%s/%s/%s", botClient.GIN.WebAddress(), orgName, mainRepo)
