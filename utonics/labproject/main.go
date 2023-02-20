@@ -306,9 +306,11 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 
 	msgs = append(msgs, "submodule content cannot be initialised and therefore pushed, yet. please initialise with synchronisation script.")
 
+	submodulePaths := make([]string, 0, len(submodules))
 	parentURL := fmt.Sprintf("%s/%s/%s", botClient.GIN.WebAddress(), orgName, mainRepo)
 	for _, submodule := range submodules {
 		os.Chdir(submodule.path)
+		submodulePaths = append(submodulePaths, submodule.path)
 		msgs = append(msgs, "Initialising submodule")
 		if err := initSubmodule(botClient); err != nil {
 			msgs = append(msgs, fmt.Sprintf("Init failed: %s", err.Error()))
@@ -333,6 +335,12 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 			return msgs, err
 		}
 		os.Chdir(localRepoPath)
+	}
+
+	// Commit changes: update submodules and .gitmodules file
+	if err := commit(botClient, append(submodulePaths, ".gitmodules"), "Update submodules"); err != nil {
+		msgs = append(msgs, fmt.Sprintf("Failed to commit submodule changes: %s", err.Error()))
+		return msgs, err
 	}
 
 	orgTeams, err := botClient.ListTeams(orgName)
