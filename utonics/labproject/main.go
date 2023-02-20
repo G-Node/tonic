@@ -275,7 +275,7 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 	repoinfo, err := botClient.GetRepo(orgName, commonsName)
 	if err == nil {
 		common = &module{
-			path:   commonsName,
+			path:   fmt.Sprintf("07_misc/%s",commonsName),
 			url:    fmt.Sprintf("../%s", commonsName),
 			branch: repoinfo.DefaultBranch,
 		}
