@@ -280,6 +280,12 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 			branch: repoinfo.DefaultBranch,
 		}
 		msgs = append(msgs, fmt.Sprintf("Adding common submodule %q", commonsName))
+
+		commonsAddCmd := git.Command("submodule", "add", common.url, common.path)
+		if stdout, stderr, err := commonsAddCmd.OutputError(); err != nil {
+			msgs = append(msgs, fmt.Sprintf("Failed to add commons submodule: %s - %s", string(stdout), string(stderr)))
+			return msgs, err
+		}
 	} else {
 		msgs = append(msgs, fmt.Sprintf("Common repository %s/%s not found: %s", orgName, commonsName, err.Error()))
 	}
