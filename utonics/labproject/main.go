@@ -291,30 +291,19 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 		return msgs, err
 	}
 
-	// Clone commons submodule
-	msgs = append(msgs, "Cloning commons submodule")
-	initCmd = git.Command("submodule", "init")
-	if stdout, stderr, err := initCmd.OutputError(); err != nil {
-		msgs = append(msgs, fmt.Sprintf("Failed to init submodules: %s - %s", string(stdout), string(stderr)))
-		return msgs, err
-	}
-	updCmd = git.Command("submodule", "update")
-	if stdout, stderr, err := updCmd.OutputError(); err != nil {
-		msgs = append(msgs, fmt.Sprintf("Failed to update submodules: %s - %s", string(stdout), string(stderr)))
-		return msgs, err
-	}
-
-	// Commit changes (update .gitmodules)
-	if err := commit(botClient, []string{".gitmodules", commonsName}, "Configure submodules"); err != nil {
-		msgs = append(msgs, fmt.Sprintf("Failed to commit .gitmodules changes: %s", err.Error()))
-		return msgs, err
-	}
-
-	// Push
-	msgs = append(msgs, "Uploading template to new project repository")
-	if err := uploadProjectRepository(botClient, remoteName); err != nil {
-		msgs = append(msgs, fmt.Sprintf("Upload failed: %s", err.Error()))
-		return msgs, err
+	if common != nil {
+		// Clone commons submodule
+		msgs = append(msgs, "Cloning commons submodule")
+		initCmd = git.Command("submodule", "init")
+		if stdout, stderr, err := initCmd.OutputError(); err != nil {
+			msgs = append(msgs, fmt.Sprintf("Failed to init submodules: %s - %s", string(stdout), string(stderr)))
+			return msgs, err
+		}
+		updCmd = git.Command("submodule", "update")
+		if stdout, stderr, err := updCmd.OutputError(); err != nil {
+			msgs = append(msgs, fmt.Sprintf("Failed to update submodules: %s - %s", string(stdout), string(stderr)))
+			return msgs, err
+		}
 	}
 
 	msgs = append(msgs, "submodule content cannot be initialised and therefore pushed, yet. please initialise with synchronisation script.")
