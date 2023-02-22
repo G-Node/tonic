@@ -39,26 +39,26 @@ func main() {
 			Required: true,
 		},
 		{
-			ID:          "projname",
-			Label:       "Project name",
-			Name:        "project",
-			Description: "Must not already exist",
+			ID:          "teamname",
+			Label:       "Team name",
+			Name:        "team",
+			Description: "Name of the team the module will belong to, please name carefully to avoid creating a new team.",
 			Required:    true,
 			Type:        form.TextInput,
 		},
 		{
-			ID:          "teamname",
-			Label:       "Team name",
-			Name:        "team",
-			Description: "Name of the team the project will belong to. If it does not exist it will be created. If left blank, a new team will be created with the same name as the project.",
-			Required:    false,
+			ID:          "projname",
+			Label:       "Project name",
+			Name:        "project",
+			Description: "you may want to use <teamname.XXX> as a name to fit other submodule of the parent repository (if it corresponds).",
+			Required:    true,
 			Type:        form.TextInput,
 		},
 		{
 			ID:          "title",
 			Label:       "Title",
 			Name:        "title",
-			Description: "Project title",
+			Description: "Project description",
 			Type:        form.TextArea,
 			Required:    false,
 		},
@@ -69,7 +69,7 @@ func main() {
 	}
 	lpform := form.Form{
 		Pages:       []form.Page{page1},
-		Name:        "Project creation",
+		Name:        "module addition",
 		Description: "",
 	}
 	lpconfig = readConfig("labproject.json")
@@ -179,16 +179,19 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 		msgs = append(msgs, fmt.Sprintf("Failed to change to newly cloned path %q: %s", localRepoPath, err.Error()))
 		return msgs, err
 	}
-
+  // set option, nb description has additional info for adding module in parent repo.
+	gitaddress := "../.."
+	title2 := fmt.Sprintf("%s  \n use this command to add the module in parent repo: \n git submodule add %s/%s/%s ./03_data/%s \n (you can change that last path indicated here as an example)", title, gitaddress,orgName, project,project )
 	remoteName := "newproject"
 	createAndSetRemote := func(name string) error {
 		repoOpt := gogs.CreateRepoOption{
 			Name:        name,
-			Description: title,
+			Description: title2, 
 			Private:     true,
 			AutoInit:    false,
 			Readme:      "Default",
 		}
+
 		// Create project repository
 		msgs = append(msgs, fmt.Sprintf("Creating %s/%s", orgName, repoOpt.Name))
 		repo, err := botClient.CreateOrgRepo(orgName, repoOpt)
@@ -214,10 +217,7 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 		return nil
 	}
 
-
-	mainRepo := fmt.Sprintf("%s.main", project)
-	if err := createAndSetRemote(mainRepo); err != nil {
-
+	if err := createAndSetRemote(project); err != nil {
 		return msgs, err
 	}
 
@@ -272,87 +272,16 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 		os.Chdir(localRepoPath)
 	}
 
-	// check if common submodule exists
-	var common *module
-	commonsName := "labcommons"
-	repoinfo, err := botClient.GetRepo(orgName, commonsName)
-	if err == nil {
-		common = &module{
-			path:   fmt.Sprintf("07_misc/%s",commonsName),
-			url:    fmt.Sprintf("../%s", commonsName),
-			branch: repoinfo.DefaultBranch,
-		}
-		msgs = append(msgs, fmt.Sprintf("Adding common submodule %q", commonsName))
-		commonsURL := fmt.Sprintf("%s/%s/%s", botClient.GIN.GitAddress(), orgName, commonsName)
-
-		commonsAddCmd := git.Command("submodule", "add", commonsURL, common.path)
-		if stdout, stderr, err := commonsAddCmd.OutputError(); err != nil {
-			msgs = append(msgs, fmt.Sprintf("Failed to add commons submodule: %s - %s", string(stdout), string(stderr)))
-			return msgs, err
-		}
-	} else {
-		msgs = append(msgs, fmt.Sprintf("Common repository %s/%s not found: %s", orgName, commonsName, err.Error()))
-	}
-
 	// Write back updated .gitmodules file
 	msgs = append(msgs, "Updating .gitmodules configuration")
-	if err := writeGitModules(localRepoPath, newSubmodules, common); err != nil {
+	if err := writeGitModules(localRepoPath, newSubmodules); err != nil {
 		msgs = append(msgs, fmt.Sprintf("Failed to write .gitmodules file: %s", err.Error()))
 		return msgs, err
 	}
-	
-	  msgs = append(msgs, "submodule content cannot be initialised and therefore pushed, yet. please initialise with synchronisation script.")
 
-	if common != nil {
-		// Clone commons submodule
-		msgs = append(msgs, "Cloning commons submodule")
-		initCmd = git.Command("submodule", "init")
-		if stdout, stderr, err := initCmd.OutputError(); err != nil {
-			msgs = append(msgs, fmt.Sprintf("Failed to init submodules: %s - %s", string(stdout), string(stderr)))
-			return msgs, err
-		}
-		updCmd = git.Command("submodule", "update")
-		if stdout, stderr, err := updCmd.OutputError(); err != nil {
-			msgs = append(msgs, fmt.Sprintf("Failed to update submodules: %s - %s", string(stdout), string(stderr)))
-			return msgs, err
-		}
-	}
-
-
-	submodulePaths := make([]string, 0, len(submodules))
-	parentURL := fmt.Sprintf("%s/%s/%s", botClient.GIN.WebAddress(), orgName, mainRepo)
-	for _, submodule := range submodules {
-		os.Chdir(submodule.path)
-		submodulePaths = append(submodulePaths, submodule.path)
-		msgs = append(msgs, "Initialising submodule")
-		if err := initSubmodule(botClient); err != nil {
-			msgs = append(msgs, fmt.Sprintf("Init failed: %s", err.Error()))
-			return msgs, err
-		}
-
-		msgs = append(msgs, "Writing link to parent in submodule README(s)")
-		if err := linkToParent(parentURL); err != nil {
-			msgs = append(msgs, fmt.Sprintf("Init failed: %s", err.Error()))
-			return msgs, err
-		}
-
-		// Commit changes (update README(s) in submodule)
-		if err := commit(botClient, []string{"."}, "Add parent repo URLs to README files"); err != nil {
-			msgs = append(msgs, fmt.Sprintf("Failed to commit README changes: %s", err.Error()))
-			return msgs, err
-		}
-
-		msgs = append(msgs, "Uploading submodule to new project repository")
-		if err := uploadProjectRepository(botClient, remoteName); err != nil {
-			msgs = append(msgs, fmt.Sprintf("Upload failed: %s", err.Error()))
-			return msgs, err
-		}
-		os.Chdir(localRepoPath)
-	}
-
-	// Commit changes: update submodules and .gitmodules file
-	if err := commit(botClient, append(submodulePaths, ".gitmodules"), "Update submodules"); err != nil {
-		msgs = append(msgs, fmt.Sprintf("Failed to commit submodule changes: %s", err.Error()))
+	// Commit changes (update .gitmodules)
+	if err := commit(botClient, "Configure submodules"); err != nil {
+		msgs = append(msgs, fmt.Sprintf("Failed to commit .gitmodules changes: %s", err.Error()))
 		return msgs, err
 	}
 
@@ -362,6 +291,18 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 		msgs = append(msgs, fmt.Sprintf("Upload failed: %s", err.Error()))
 		return msgs, err
 	}
+	
+	  msgs = append(msgs, "submodule content cannot be initialised and therefore pushed, yet. please initialise with synchronisation script.")
+
+//for _, submodule := range submodules {
+//		os.Chdir(submodule.path)
+//		msgs = append(msgs, "Uploading submodule to new project repository")
+//		if err := uploadProjectRepository(botClient, remoteName); err != nil {
+//			msgs = append(msgs, fmt.Sprintf("Upload failed: %s", err.Error()))
+//			return msgs, err
+//		}
+//		os.Chdir(localRepoPath)
+//	}
 
 	orgTeams, err := botClient.ListTeams(orgName)
 	if err != nil {
@@ -383,7 +324,7 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 		// Create Team
 		// TODO: Use non admin command when it becomes available
 		msgs = append(msgs, fmt.Sprintf("Creating team %s/%s", orgName, project))
-		team, err = botClient.AdminCreateTeam(orgName, gogs.CreateTeamOption{Name: teamName, Description: title, Permission: "admin"})
+		team, err = botClient.AdminCreateTeam(orgName, gogs.CreateTeamOption{Name: teamName, Description: title, Permission: "write"})
 		if err != nil {
 			msgs = append(msgs, fmt.Sprintf("Failed to create team: %s", err.Error()))
 			return msgs, err
@@ -406,10 +347,8 @@ func newProject(values map[string][]string, botClient, userClient *worker.Client
 	}
 
 	// Add Repositories to Team
-
-	msgs = append(msgs, fmt.Sprintf("Adding repositories %q to team %q", mainRepo+" and others", team.Name))
-	if err := botClient.AdminAddTeamRepository(team.ID, mainRepo); err != nil {
-
+	msgs = append(msgs, fmt.Sprintf("Adding repositories %q to team %q", (project + ".main and others"), team.Name))
+	if err := botClient.AdminAddTeamRepository(team.ID, (project)); err != nil {
 		msgs = append(msgs, fmt.Sprintf("Failed to add repository %q to team: %s", project, err.Error()))
 		return msgs, err
 	}
@@ -532,15 +471,13 @@ func readConfig(filename string) *labProjectConfig {
 	return config
 }
 
-
-func commit(botClient *worker.Client, paths []string, msg string) error {
+func commit(botClient *worker.Client, msg string) error {
 	// Set local git config
 	if err := git.SetGitUser(botClient.GIN.Username, botClient.GIN.Username+"@tonic"); err != nil {
 		return err
 	}
 	addchan := make(chan git.RepoFileStatus)
-	go git.Add(paths, addchan)
-
+	go git.Add([]string{".gitmodules"}, addchan)
 	for stat := range addchan {
 		log.Print(stat)
 		if stat.Err != nil {
@@ -548,46 +485,6 @@ func commit(botClient *worker.Client, paths []string, msg string) error {
 		}
 	}
 	return git.Commit(msg)
-}
-
-
-func initSubmodule(botClient *worker.Client) error {
-	// Set local git config
-	if err := git.SetGitUser(botClient.GIN.Username, botClient.GIN.Username+"@tonic"); err != nil {
-		return err
-	}
-
-	return botClient.GIN.InitDir(false)
-}
-
-func linkToParent(parentURL string) error {
-	// Add a link to the parent repository in the submodule's README (glob for all files starting with README)
-	files, err := os.ReadDir(".")
-	if err != nil {
-		return err
-	}
-
-	parentText := fmt.Sprintf("\n\n%s is the parent directory\n\n", parentURL)
-	for _, file := range files {
-		if file.IsDir() {
-			// ignore
-			continue
-		}
-
-		if strings.HasPrefix(file.Name(), "README") {
-			// append parent name
-			readme, err := os.OpenFile(file.Name(), os.O_APPEND|os.O_WRONLY, 0644)
-			if err != nil {
-				return err
-			}
-			defer readme.Close()
-
-			if _, err := readme.WriteString(parentText); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
 }
 
 func uploadProjectRepository(botClient *worker.Client, remote string) error {
@@ -652,9 +549,7 @@ func parseGitModules(repoPath string) (map[string]*module, error) {
 }
 
 // writeGitModules writes back the .gitmodules file.
-
-func writeGitModules(repoPath string, modules map[string]*module, common *module) error {
-
+func writeGitModules(repoPath string, modules map[string]*module) error {
 	gmFilePath := filepath.Join(repoPath, ".gitmodules")
 	gitmodulesFile, err := os.Create(gmFilePath)
 	if err != nil {
@@ -662,31 +557,16 @@ func writeGitModules(repoPath string, modules map[string]*module, common *module
 	}
 
 	for smName, submodule := range modules {
-		if submodule != nil {
-			if _, err := gitmodulesFile.WriteString(composeModuleBlock(smName, *submodule)); err != nil {
-				return err
-			}
+		headerLine := fmt.Sprintf("[submodule %q]\n", smName)
+		pathLine := fmt.Sprintf("\tpath = %s\n", submodule.path)
+		urlLine := fmt.Sprintf("\turl = %s\n", submodule.url)
+		branchLine := ""
+		if submodule.branch != "" { // optional
+			branchLine = fmt.Sprintf("\tbranch = %s\n", submodule.branch)
 		}
-	}
-
-	if common != nil {
-		if _, err := gitmodulesFile.WriteString(composeModuleBlock("common", *common)); err != nil {
-
+		if _, err := gitmodulesFile.WriteString(headerLine + pathLine + urlLine + branchLine); err != nil {
 			return err
 		}
 	}
 	return nil
 }
-
-func composeModuleBlock(name string, mod module) string {
-	headerLine := fmt.Sprintf("[submodule %q]\n", name)
-	pathLine := fmt.Sprintf("\tpath = %s\n", mod.path)
-	urlLine := fmt.Sprintf("\turl = %s\n", mod.url)
-	branchLine := ""
-	if mod.branch != "" { // optional
-		branchLine = fmt.Sprintf("\tbranch = %s\n", mod.branch)
-	}
-
-	return headerLine + pathLine + urlLine + branchLine
-}
-
