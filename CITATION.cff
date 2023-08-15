@@ -1,0 +1,31 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: tonic
+message: >-
+  Tonic is a framework for building services that interact
+  with the GIN API.
+type: software
+authors:
+  - given-names: Achilleas
+    family-names: Koutsou
+    orcid: 'https://orcid.org/0000-0002-5726-3034'
+  - given-names: Julien
+    family-names: Colomb
+    orcid: 'https://orcid.org/0000-0002-3127-5520'
+  - given-names: Michael
+    family-names: Sonntag
+    orcid: 'https://orcid.org/0000-0001-6744-1159'
+repository-code: 'https://github.com/G-Node/tonic'
+url: 'https://gin-tonic.netlify.app/'
+abstract: >-
+  Tonic is a framework for building services that interact
+  with the GIN API.
+
+  The application is written in GO and can be installed via
+  docker. A special user on the GIN platform and a template
+  repository should be indicated in a json file.
+license: BSD-3-Clause
+commit: 65ffb28a2a9efa5dd937589326202b07315a98a1
+version: '1.0'
