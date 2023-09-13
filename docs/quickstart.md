@@ -87,7 +87,7 @@ The following configuration keys are supported:
     "web": "<web address for GIN service: required>",
       "git": "<git address for GIN service: required>",
       "username": "<service username: required>",
-      "password": "<service pasword: required>"
+      "password": "<service password: required>"
   },
   "templaterepo": "<template repository: required>",
   "cookiename": "<session cookie name: optional (default: utonic-labproject)>",

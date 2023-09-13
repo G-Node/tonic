@@ -7,7 +7,7 @@ It defines the following service components:
 
 The Form consists of two pages.  The first page contains 3 elements:
 1. Name: a simple text field.
-2. Descritpion: a long form text area.
+2. Description: a long form text area.
 3. Duration: the duration in seconds that the action will run for.
 
 A second page includes one of each type of input supported for demonstration purposes.
