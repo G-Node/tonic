@@ -32,7 +32,7 @@ Create a file called `labproject.json` (later called via `/path/to/labproject.js
     "web": "<web address for GIN service: required>",
     "git": "<git address for GIN service: required>",
     "username": "<bot user username: required>",
-    "password": "<bot user pasword: required>"
+    "password": "<bot user password: required>"
   },
   "templaterepo": "<template repository: required>",
   "cookiename": "<session cookie name: optional (default: utonic-labproject)>",
